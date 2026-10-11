@@ -34,8 +34,29 @@ public sealed class JsonStore
     private static StoreState Read(string path)
     {
         StoreState result = JsonSerializer.Deserialize<StoreState>(File.ReadAllText(path), JsonOptions) ?? throw new InvalidDataException("Arquivo vazio.");
-        if (result.SchemaVersion != 1 || result.Users.Count == 0 || !result.Users.Any(u => u.Active && u.Role == UserRole.Administrador))
+        if (result.SchemaVersion != 1 || result.Settings is null || result.Users is null || result.Products is null || result.Customers is null
+            || result.Sales is null || result.Orders is null || result.CashSessions is null || result.CashMovements is null || result.ReceivablePayments is null
+            || result.StockMovements is null || result.Audit is null || result.Printers is null || result.Scales is null
+            || result.Users.Count == 0 || !result.Users.Any(u => u is not null && u.Active && u.Role == UserRole.Administrador))
             throw new InvalidDataException("Versão de dados incompatível ou administrador ausente.");
+        if (result.Users.Any(u => u is null || string.IsNullOrWhiteSpace(u.Username) || u.PasswordHash is null || u.PasswordSalt is null) || result.Products.Any(p => p is null) || result.Customers.Any(c => c is null)
+            || result.Sales.Any(s => s is null || s.Lines is null) || result.Orders.Any(o => o is null || o.Lines is null))
+            throw new InvalidDataException("O backup contém registros incompletos.");
+        if (result.Users.Select(u => u.Id).Distinct().Count() != result.Users.Count || result.Users.Select(u => u.Username.ToUpperInvariant()).Distinct().Count() != result.Users.Count
+            || result.Products.Select(p => p.Id).Distinct().Count() != result.Products.Count || result.Products.Any(p => p.Stock < 0)
+            || result.CashSessions.Count(c => c.ClosedAt is null) > 1 || result.NextSaleNumber <= result.Sales.Select(s => s.Number).DefaultIfEmpty(0).Max()
+            || result.NextOrderNumber <= result.Orders.Select(o => o.Number).DefaultIfEmpty(0).Max())
+            throw new InvalidDataException("O backup contém identificadores, contadores ou saldos inconsistentes.");
+        foreach (var user in result.Users)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(user.Username) || !Enum.IsDefined(user.Role) || user.PasswordIterations < 10_000 || user.PasswordIterations > 1_000_000
+                    || Convert.FromBase64String(user.PasswordHash).Length != 32 || Convert.FromBase64String(user.PasswordSalt).Length < 16)
+                    throw new InvalidDataException("Credenciais inválidas no backup.");
+            }
+            catch (FormatException ex) { throw new InvalidDataException("Credenciais inválidas no backup.", ex); }
+        }
         return result;
     }
     private static StoreState Clone(StoreState value) => JsonSerializer.Deserialize<StoreState>(JsonSerializer.Serialize(value, JsonOptions), JsonOptions)!;
@@ -46,8 +67,9 @@ public sealed class JsonStore
         {
             StoreState next = Clone(state);
             T result = action(next);
-            Save(next);
-            state = next;
+            StoreState committed = Clone(next);
+            Save(committed);
+            state = committed;
             return result;
         }
     }

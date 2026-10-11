@@ -29,7 +29,7 @@ public partial class App : Application
             {
                 var login = new LoginWindow(service); MainWindow = login;
                 if (login.ShowDialog() != true) break;
-                var main = new MainWindow(service); MainWindow = main; main.ShowDialog();
+                var main = new MainWindow(service) { WindowState = WindowState.Maximized }; MainWindow = main; main.ShowDialog();
                 if (!main.ReturnToLogin) break;
                 service.Logout();
             }

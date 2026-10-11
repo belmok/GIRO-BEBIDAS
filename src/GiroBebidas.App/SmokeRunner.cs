@@ -28,12 +28,20 @@ public static class SmokeRunner
         {
             vm.Page = page; Capture(window, Path.Combine(output, $"{index++:00}-{page.ToLowerInvariant()}.png"));
         }
-        var form = new FormDialog(window, "Cadastrar produto", "Personalize a foto, a descrição e os valores do produto.");
-        form.Text("name", "Nome", "Pilsen • lata 350 ml"); form.Text("description", "Descrição", "Cerveja pilsen para servir gelada", true); form.Number("price", "Preço de venda", 4.50m);
+        string samplePhoto = Path.Combine(output, "foto-de-teste.png");
+        var photoVisual = new DrawingVisual(); using (var context = photoVisual.RenderOpen()) context.DrawImage(BeverageArt.Create(vm.Snapshot.Products[0]), new Rect(0, 0, 160, 140));
+        var photoBitmap = new RenderTargetBitmap(160, 140, 96, 96, PixelFormats.Pbgra32); photoBitmap.Render(photoVisual);
+        var photoEncoder = new PngBitmapEncoder(); photoEncoder.Frames.Add(BitmapFrame.Create(photoBitmap)); using (var stream = File.Create(samplePhoto)) photoEncoder.Save(stream);
+        var photoProduct = vm.Snapshot.Products[0]; photoProduct.PhotoBase64 = PhotoTools.Import(samplePhoto); photoProduct.Description = "Cerveja pilsen em lata de 350 ml. Ideal para servir gelada.";
+        service.SaveProduct(photoProduct); vm.Refresh();
+        if (PhotoTools.Decode(service.Snapshot.Products[0].PhotoBase64) is null) throw new InvalidOperationException("Falha na importação da foto.");
+        service.ExportBackup(Path.Combine(output, "backup-com-foto.json"));
+        var form = window.CreateProductDialog(photoProduct, false);
         // An unshown owner cannot be assigned to a visible window; clear it for offscreen QA.
-        form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = 520; Capture(form, Path.Combine(output, "12-formulario.png")); form.Close();
+        form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = Math.Min(800, form.MaxHeight); Capture(form, Path.Combine(output, "12-cadastro-produto.png")); form.Close();
+        window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
         vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e nove módulos renderizados. Formulário renderizado.\n");
+        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e nove módulos renderizados. Cadastro completo de produto renderizado. Foto importada, persistida e exportada no backup. Layout menor renderizado.\n");
     }
     private static void Capture(Window window, string path)
     {
@@ -41,7 +49,8 @@ public static class SmokeRunner
         if (!window.IsVisible) window.Show();
         window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
         var content = (FrameworkElement)window.Content;
-        var bitmap = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(content);
+        var backdrop = new DrawingVisual(); using (var context = backdrop.RenderOpen()) context.DrawRectangle(window.Background, null, new Rect(0, 0, content.ActualWidth, content.ActualHeight));
+        var bitmap = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(backdrop); bitmap.Render(content);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap)); using var stream = File.Create(path); encoder.Save(stream);
     }
 }

@@ -120,6 +120,20 @@ try
     Equal("preservar", File.ReadAllText(Path.Combine(installation, "anotacoes-do-usuario.txt")), "Desinstalador preserva arquivos que não pertencem ao pacote");
     Check(File.Exists(Path.Combine(userData, "giro-dados.json")), "Desinstalador preserva dados do depósito");
     Reject(() => Installation.Uninstall(userData), "Desinstalador recusa pasta sem manifesto");
+    var separate = new StoreService(new JsonStore(Path.Combine(root, "isolamento"))); separate.Login("ADMIN", "ADMIN");
+    var independent = new Product { Name = "Produto isolado", Code = "ISO", Price = 1, Stock = 1 }; separate.SaveProduct(independent); independent.Stock = -99;
+    Equal(1m, separate.Snapshot.Products.Single(p => p.Id == independent.Id).Stock, "Objetos externos não alteram o estoque fora de transações");
+    separate.OpenCash(0); var isolatedSale = separate.CompleteSale(new([new(independent.Id, 1)], 0, 0, null, PaymentMethod.Dinheiro, 1));
+    isolatedSale.Canceled = true; Check(!separate.Snapshot.Sales.Single().Canceled, "Resultado retornado não permite adulterar venda gravada");
+    var historical = separate.Snapshot.Products.Single(p => p.Id == independent.Id); historical.Unit = "kg";
+    Reject(() => separate.SaveProduct(historical), "Unidade com histórico de venda é preservada");
+    separate.MoveCash(CashMovementKind.Sangria, 1, "retirada");
+    Reject(() => separate.CancelSale(isolatedSale.Id, "teste"), "Cancelamento não deixa caixa com dinheiro negativo");
+    separate.MoveCash(CashMovementKind.Suprimento, 1, "estorno"); separate.CancelSale(isolatedSale.Id, "teste");
+    Equal(0m, StoreService.SummarizeCash(separate.Snapshot, separate.Snapshot.CashSessions.Single().Id).Expected, "Estorno após suprimento reconcilia o caixa");
+    string invalidBackup = Path.Combine(root, "invalido.json"); File.WriteAllText(invalidBackup, "{\"SchemaVersion\":1,\"Users\":null}");
+    separate.CloseCash(0, "teste");
+    Reject(() => separate.RestoreBackup(invalidBackup), "Backup com estrutura incompleta é recusado");
     Console.WriteLine($"\n{checks} verificações aprovadas. Dados de teste: {root}"); return 0;
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

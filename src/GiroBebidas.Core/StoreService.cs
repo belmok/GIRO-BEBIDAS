@@ -124,7 +124,8 @@ public sealed class StoreService(JsonStore store)
             if (existing is not null)
             {
                 if (Reserved(s, input.Id) > 0 && (!input.Active || input.Unit != existing.Unit)) throw new InvalidOperationException("Produto reservado em pedido: mantenha ativo e preserve a unidade.");
-                if (input.Unit != existing.Unit && existing.Stock > 0) throw new InvalidOperationException("Zere o estoque antes de alterar a unidade.");
+                if (input.Unit != existing.Unit && (existing.Stock > 0 || s.Sales.Any(v => v.Lines.Any(l => l.ProductId == input.Id)) || s.Orders.Any(o => o.Lines.Any(l => l.ProductId == input.Id))))
+                    throw new InvalidOperationException("Um produto com estoque ou histórico não pode trocar de unidade. Cadastre outro produto.");
                 input.Stock = existing.Stock;
                 s.Products[s.Products.IndexOf(existing)] = input;
             }
@@ -253,6 +254,8 @@ public sealed class StoreService(JsonStore store)
             if (sale.Canceled) throw new InvalidOperationException("Esta venda já foi cancelada.");
             if (sale.CashSessionId != cash.Id) throw new InvalidOperationException("Cancelamentos são permitidos apenas no caixa de origem ainda aberto.");
             if (s.ReceivablePayments.Any(p => p.SaleId == sale.Id)) throw new InvalidOperationException("Esta venda já possui recebimentos de fiado e não pode ser cancelada.");
+            if (sale.PaymentMethod == PaymentMethod.Dinheiro && SummarizeCash(s, cash.Id).Expected < sale.Total)
+                throw new InvalidOperationException("O caixa não tem dinheiro suficiente para o estorno. Registre um suprimento antes de cancelar.");
             sale.CancelReason = Required(reason, "o motivo do cancelamento"); sale.Canceled = true;
             foreach (var line in sale.Lines)
             {

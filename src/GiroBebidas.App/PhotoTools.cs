@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -25,7 +26,10 @@ public static class PhotoTools
         if ((long)frame.PixelWidth * frame.PixelHeight > 40_000_000) throw new InvalidOperationException("Escolha uma imagem com menos de 40 megapixels.");
         double scale = Math.Min(1, 600d / Math.Max(frame.PixelWidth, frame.PixelHeight));
         BitmapSource resized = scale < 1 ? new TransformedBitmap(frame, new ScaleTransform(scale, scale)) : frame;
-        var encoder = new JpegBitmapEncoder { QualityLevel = 88 }; encoder.Frames.Add(BitmapFrame.Create(resized));
+        var canvas = new DrawingVisual();
+        using (var drawing = canvas.RenderOpen()) { drawing.DrawRectangle(Brushes.White, null, new Rect(0, 0, resized.PixelWidth, resized.PixelHeight)); drawing.DrawImage(resized, new Rect(0, 0, resized.PixelWidth, resized.PixelHeight)); }
+        var flattened = new RenderTargetBitmap(resized.PixelWidth, resized.PixelHeight, 96, 96, PixelFormats.Pbgra32); flattened.Render(canvas);
+        var encoder = new JpegBitmapEncoder { QualityLevel = 88 }; encoder.Frames.Add(BitmapFrame.Create(flattened));
         using var output = new MemoryStream(); encoder.Save(output);
         return Convert.ToBase64String(output.ToArray());
     }

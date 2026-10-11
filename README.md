@@ -65,3 +65,5 @@ Para gerar aplicativo, instalador, desinstalador e pacote portátil:
 O script usa pastas de construção isoladas, testa as regras antes de publicar e gera hashes SHA-256 dos arquivos de distribuição. Para testes visuais isolados, o aplicativo aceita `--ui-smoke --data-dir <pasta-vazia-de-teste> --output <pasta-de-imagens>`. Dados de teste nunca são enviados no instalador.
 
 Veja `docs/GUIA-DO-USUARIO.md` para o uso diário.
+
+O histórico da entrega está em `docs/VERSOES.md`. Para verificar o pacote em uma pasta isolada, sem criar atalhos ou alterar o registro do Windows, execute `./scripts/Verificar-Distribuicao.ps1`.

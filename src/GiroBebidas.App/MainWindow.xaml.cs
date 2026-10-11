@@ -64,6 +64,10 @@ public partial class MainWindow : Window
     private void EditProduct_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(Require(Vm.SelectedStock, "um produto").Product, true));
     private void ProductForm(Product p, bool editing)
     {
+        if (CreateProductDialog(p, editing).ShowDialog() == true) Notify("Produto salvo com sucesso.");
+    }
+    internal FormDialog CreateProductDialog(Product p, bool editing)
+    {
         var d = new FormDialog(this, editing ? "Editar produto" : "Cadastrar produto", "Personalize a foto, a descrição e os valores do produto.");
         string photo = p.PhotoBase64;
         var image = d.Photo(PhotoTools.Decode(photo) ?? BeverageArt.Create(p));
@@ -86,7 +90,7 @@ public partial class MainWindow : Window
             Code = f.Value("code"), Barcode = f.Value("barcode"), Category = f.Value("category"), Unit = f.Value("unit"), Package = f.Value("package"), Color = p.Color,
             Cost = f.Decimal("cost"), Price = f.Decimal("price"), WholesalePrice = f.Decimal("wholesale"), WholesaleMinimum = f.Decimal("threshold"),
             Stock = f.Decimal("stock"), MinimumStock = f.Decimal("min"), Active = f.Checked("active") });
-        if (d.ShowDialog() == true) Notify("Produto salvo com sucesso.");
+        return d;
     }
     private void AdjustStock_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
