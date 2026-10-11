@@ -15,7 +15,7 @@ namespace GiroBebidas.Setup;
 
 public static class InstallerApp
 {
-    private static string Version => typeof(InstallerApp).Assembly.GetName().Version!.ToString(3);
+    internal static string ProductVersion => typeof(InstallerApp).Assembly.GetName().Version!.ToString(3);
 #if UNINSTALLER
     public static readonly bool UninstallMode = true;
 #else
@@ -80,7 +80,7 @@ public sealed class InstallerWindow : Window
         deleteData = new CheckBox { Content = "Excluir também todos os dados, fotos e backups locais", IsChecked = false, Margin = new Thickness(0, 17, 0, 0), Visibility = uninstall ? Visibility.Visible : Visibility.Collapsed }; body.Children.Add(deleteData);
         body.Children.Add(new TextBlock { Text = uninstall ? "A desinstalação remove apenas os arquivos registrados pelo instalador." : "Primeiro acesso: usuário ADMIN • senha ADMIN\nAplicativo independente: não exige instalação prévia do .NET.", Foreground = Brush("#6F8965"), FontSize = 12, Margin = new Thickness(0, 20, 0, 0), TextWrapping = TextWrapping.Wrap });
         progress = new ProgressBar { Height = 7, Minimum = 0, Maximum = 100, Foreground = Brush("#247C4E"), Margin = new Thickness(0, 22, 0, 10), Visibility = Visibility.Hidden }; body.Children.Add(progress);
-        status = new TextBlock { Text = $"Versão {Version} • Windows 10 / 11 • 64 bits", Foreground = Brush("#7D9272"), FontSize = 12, TextWrapping = TextWrapping.Wrap }; body.Children.Add(status);
+        status = new TextBlock { Text = $"Versão {InstallerApp.ProductVersion} • Windows 10 / 11 • 64 bits", Foreground = Brush("#7D9272"), FontSize = 12, TextWrapping = TextWrapping.Wrap }; body.Children.Add(status);
         var footer = new DockPanel { Margin = new Thickness(32, 13, 32, 27) }; Grid.SetRow(footer, 2); root.Children.Add(footer);
         primary = Button(uninstall ? "Desinstalar" : "Instalar agora", true); primary.MinWidth = 157; DockPanel.SetDock(primary, Dock.Right); footer.Children.Add(primary); primary.Click += Primary_Click;
         var cancel = Button("Fechar", false); cancel.HorizontalAlignment = HorizontalAlignment.Left; cancel.Click += (_, _) => { if (!busy) Close(); }; footer.Children.Add(cancel); Content = root;
@@ -147,7 +147,7 @@ public static class WindowsRegistration
         Shortcut(Path.Combine(Menu, "Desinstalar Giro Bebidas.lnk"), Path.Combine(target, "DesinstalarGiroBebidas.exe"));
         if (desktop) Shortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Giro Bebidas.lnk"), Path.Combine(target, "GiroBebidas.exe"));
         using var key = Registry.CurrentUser.CreateSubKey(RegistryPath);
-        key.SetValue("DisplayName", "Giro Bebidas"); key.SetValue("DisplayVersion", Version); key.SetValue("Publisher", "Giro Bebidas"); key.SetValue("InstallLocation", target);
+        key.SetValue("DisplayName", "Giro Bebidas"); key.SetValue("DisplayVersion", InstallerApp.ProductVersion); key.SetValue("Publisher", "Giro Bebidas"); key.SetValue("InstallLocation", target);
         key.SetValue("DisplayIcon", Path.Combine(target, "GiroBebidas.exe")); key.SetValue("UninstallString", "\"" + Path.Combine(target, "DesinstalarGiroBebidas.exe") + "\"");
         key.SetValue("NoModify", 1, RegistryValueKind.DWord); key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
     }
