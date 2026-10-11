@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.tools/
+artifacts/test-data/
+artifacts/smoke-data/
+*.user
+*.suo
+.vs/
