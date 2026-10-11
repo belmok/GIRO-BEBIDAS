@@ -1,4 +1,6 @@
-# Giro Bebidas — PDV em C# + WPF
+# GIRO-BEBIDAS
+
+PDV Giro Bebidas em C# + WPF.
 
 Aplicativo para Windows, com identidade e depósito fictícios, desenvolvido em C# e WPF (.NET 8). Aplicativo, instalador e desinstalador fazem parte desta solução e são versionados no mesmo repositório Git.
 
