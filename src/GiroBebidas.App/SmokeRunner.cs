@@ -97,7 +97,7 @@ public static class SmokeRunner
         CheckCartAmounts(window);
         CheckCashStatus(output);
         vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados.\n");
+        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados. Menu do caixa acionado por automação, atualizado sem reabrir e fechado por Esc ou clique fora; histórico acessível e configurações restritas ao administrador. Formulário de configurações do caixa renderizado; fundo sugerido salvo sem alterar o saldo e adotado na próxima abertura pelo operador.\n");
     }
     private static void CheckProductUi(MainWindow window, string output)
     {
@@ -263,14 +263,118 @@ public static class SmokeRunner
         {
             Capture(cashWindow, Path.Combine(output, "31-caixa-aberto.png"));
             AssertCashStatus(cashWindow, true);
+            OpenCashMenu(cashWindow, true, true);
+            CaptureElement(cashWindow.CashStatusMenu, Path.Combine(output, "33-menu-caixa-aberto.png"));
+            EscapeCashMenu(cashWindow);
+            OpenCashMenu(cashWindow, true, true);
+            cashWindow.CashStatusMenu.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = Mouse.PreviewMouseDownOutsideCapturedElementEvent });
+            FlushLayout(cashWindow);
+            if (cashWindow.CashStatusMenu.IsOpen) throw new InvalidOperationException("Um clique fora do menu precisa fechar as opções do caixa.");
             decimal expected = cashWindow.Vm.CashSummary?.Expected ?? throw new InvalidOperationException("O caixa de teste precisa estar aberto.");
             cashService.CloseCash(expected, "Conferência automática da aparência do caixa.");
             cashWindow.Vm.Refresh(); FlushLayout(cashWindow); AssertCashStatus(cashWindow, false);
             Capture(cashWindow, Path.Combine(output, "30-caixa-fechado.png"));
+            OpenCashMenu(cashWindow, false, true);
+            CaptureElement(cashWindow.CashStatusMenu, Path.Combine(output, "32-menu-caixa-fechado.png"));
             cashService.OpenCash(250); cashWindow.Vm.Refresh(); FlushLayout(cashWindow); AssertCashStatus(cashWindow, true);
+            AssertCashMenu(cashWindow, true, true);
+            InvokeCashHistory(cashWindow);
+            cashWindow.Vm.Page = "PDV";
             Capture(cashWindow, Path.Combine(output, "31-caixa-aberto.png"));
+            var settings = cashWindow.CreateCashSettingsDialog();
+            try
+            {
+                settings.Owner = null; settings.SizeToContent = SizeToContent.Manual; settings.Height = Math.Min(530, settings.MaxHeight);
+                Capture(settings, Path.Combine(output, "34-configuracoes-caixa.png"));
+                if (settings.Decimal("opening") != cashWindow.Vm.Snapshot.Settings.CashOpeningDefault ||
+                    settings.Checked("autoprint") != cashWindow.Vm.Snapshot.Settings.AutoPrint)
+                    throw new InvalidOperationException("As configurações do caixa precisam carregar o fundo de troco e a impressão automática atuais.");
+                var openingInput = Descendants<TextBox>((FrameworkElement)settings.Content).Single();
+                ((IValueProvider)new TextBoxAutomationPeer(openingInput).GetPattern(PatternInterface.Value)).SetValue("123,45");
+                FlushLayout(settings); AssertSearchReadable(openingInput);
+                if (settings.Decimal("opening") != 123.45m) throw new InvalidOperationException("O fundo de troco precisa aceitar valores em reais com vírgula decimal.");
+                decimal cashBeforeSettings = cashWindow.Vm.CashSummary?.Expected ?? throw new InvalidOperationException("O caixa precisa estar aberto durante a configuração do fundo sugerido.");
+                settings.Submit?.Invoke(settings); cashWindow.Vm.Refresh(); FlushLayout(cashWindow);
+                if (cashWindow.Vm.Snapshot.Settings.CashOpeningDefault != 123.45m || cashWindow.Vm.CashSummary?.Expected != cashBeforeSettings)
+                    throw new InvalidOperationException("Salvar o fundo de troco sugerido precisa persistir o valor sem movimentar o dinheiro do caixa aberto.");
+            }
+            finally { settings.Close(); }
+            cashService.SaveUser(new() { Name = "Operador de teste", Username = "OPERADOR", Role = UserRole.Operador }, "1234");
+            cashService.Login("OPERADOR", "1234");
+            var operatorWindow = new MainWindow(cashService, false)
+            {
+                Width = 1200, Height = 760, WindowStartupLocation = WindowStartupLocation.Manual,
+                Left = -10000, Top = -10000, ShowInTaskbar = false, ShowActivated = false
+            };
+            try
+            {
+                operatorWindow.Show(); FlushLayout(operatorWindow);
+                OpenCashMenu(operatorWindow, true, false); InvokeCashHistory(operatorWindow);
+                bool settingsRejected = false;
+                try { operatorWindow.CreateCashSettingsDialog().Close(); }
+                catch (UnauthorizedAccessException) { settingsRejected = true; }
+                if (!settingsRejected) throw new InvalidOperationException("O operador não pode acessar as configurações do caixa, mesmo fora do menu.");
+                cashService.CloseCash(operatorWindow.Vm.CashSummary?.Expected ?? throw new InvalidOperationException("O caixa do operador precisa estar aberto."), "Conferência do menu do operador.");
+                operatorWindow.Vm.Refresh(); FlushLayout(operatorWindow); AssertCashStatus(operatorWindow, false);
+                OpenCashMenu(operatorWindow, false, false); EscapeCashMenu(operatorWindow);
+                var openingDialog = operatorWindow.CreateOpenCashDialog();
+                try
+                {
+                    if (openingDialog.Decimal("opening") != 123.45m)
+                        throw new InvalidOperationException("A próxima abertura do caixa precisa sugerir o fundo configurado pelo administrador, inclusive para o operador.");
+                }
+                finally { openingDialog.Close(); }
+                cashService.OpenCash(250); operatorWindow.Vm.Refresh(); FlushLayout(operatorWindow); AssertCashStatus(operatorWindow, true);
+            }
+            finally { operatorWindow.CashStatusMenu.IsOpen = false; operatorWindow.Vm.ClearCart(); operatorWindow.Close(); }
         }
-        finally { cashWindow.Vm.ClearCart(); cashWindow.Close(); }
+        finally { cashWindow.CashStatusMenu.IsOpen = false; cashWindow.Vm.ClearCart(); cashWindow.Close(); }
+    }
+    private static void OpenCashMenu(MainWindow window, bool open, bool admin)
+    {
+        ((IInvokeProvider)new ButtonAutomationPeer(window.CashStatusButton).GetPattern(PatternInterface.Invoke)).Invoke();
+        FlushLayout(window); window.CashStatusMenu.UpdateLayout();
+        AssertCashMenu(window, open, admin);
+    }
+    private static void AssertCashMenu(MainWindow window, bool open, bool admin)
+    {
+        string expectedAction = open ? "Fechar caixa" : "Abrir caixa";
+        var menu = window.CashStatusMenu;
+        // ContextMenu inherits Popup's StaysOpen=true metadata; test dismissal behavior instead.
+        if (!menu.IsOpen || !ReferenceEquals(menu.DataContext, window.Vm) || window.Vm.CashActionLabel != expectedAction ||
+            window.CashPrimaryAction.Header?.ToString() != expectedAction || !window.CashPrimaryAction.IsEnabled || !window.CashHistoryItem.IsEnabled ||
+            window.CashSettingsItem.IsEnabled != admin || window.Vm.IsAdmin != admin || menu.ActualWidth <= 0 || menu.ActualHeight <= 0)
+            throw new InvalidOperationException($"O menu do caixa precisa mostrar a ação do estado atual, permitir o histórico e limitar as configurações ao administrador. IsOpen={menu.IsOpen}; StaysOpen={menu.StaysOpen}; DataContextSame={ReferenceEquals(menu.DataContext, window.Vm)}; ActionLabel='{window.Vm.CashActionLabel}'; Header='{window.CashPrimaryAction.Header}'; ExpectedAction='{expectedAction}'; PrimaryEnabled={window.CashPrimaryAction.IsEnabled}; HistoryEnabled={window.CashHistoryItem.IsEnabled}; SettingsEnabled={window.CashSettingsItem.IsEnabled}; IsAdmin={window.Vm.IsAdmin}; ExpectedAdmin={admin}; ActualWidth={menu.ActualWidth:0.###}; ActualHeight={menu.ActualHeight:0.###}.");
+        foreach (var item in new[] { window.CashPrimaryAction, window.CashHistoryItem, window.CashSettingsItem })
+        {
+            var position = item.TranslatePoint(new Point(), menu);
+            if (item.ActualWidth <= 0 || item.ActualHeight <= 0 || position.X < -0.5 || position.Y < -0.5 ||
+                position.X + item.ActualWidth > menu.ActualWidth + 0.5 || position.Y + item.ActualHeight > menu.ActualHeight + 0.5)
+                throw new InvalidOperationException($"As ações do menu do caixa precisam permanecer visíveis sem recorte. Item='{item.Header}'; X={position.X:0.###}; Y={position.Y:0.###}; Width={item.ActualWidth:0.###}; Height={item.ActualHeight:0.###}; MenuWidth={menu.ActualWidth:0.###}; MenuHeight={menu.ActualHeight:0.###}.");
+        }
+    }
+    private static void EscapeCashMenu(MainWindow window)
+    {
+        var menu = window.CashStatusMenu;
+        var escape = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(menu) ?? throw new InvalidOperationException("O menu do caixa precisa estar renderizado."), Environment.TickCount, Key.Escape) { RoutedEvent = Keyboard.KeyDownEvent };
+        menu.RaiseEvent(escape); FlushLayout(window);
+        if (!escape.Handled || menu.IsOpen) throw new InvalidOperationException("Esc precisa fechar o menu do caixa.");
+    }
+    private static void InvokeCashHistory(MainWindow window)
+    {
+        ((IInvokeProvider)new MenuItemAutomationPeer(window.CashHistoryItem).GetPattern(PatternInterface.Invoke)).Invoke();
+        FlushLayout(window);
+        if (window.CashStatusMenu.IsOpen || window.Vm.Page != "Caixa" || !window.CashHistoryGrid.IsVisible ||
+            window.CashHistoryGrid.Items.Count != window.Vm.CashSessions.Count || window.CashHistoryGrid.Items.Count == 0)
+            throw new InvalidOperationException("Ver histórico precisa fechar o menu e mostrar os caixas registrados, inclusive para operadores.");
+    }
+    private static void CaptureElement(FrameworkElement element, string path)
+    {
+        element.UpdateLayout(); element.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        int width = (int)Math.Ceiling(element.ActualWidth), height = (int)Math.Ceiling(element.ActualHeight);
+        if (width <= 0 || height <= 0) throw new InvalidOperationException("O menu precisa ter tamanho visível antes da captura.");
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(element);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap)); using var stream = File.Create(path); encoder.Save(stream);
     }
     private static void AssertCashStatus(MainWindow window, bool open)
     {

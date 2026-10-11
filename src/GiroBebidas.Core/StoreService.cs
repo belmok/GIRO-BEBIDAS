@@ -368,11 +368,13 @@ public sealed partial class StoreService(JsonStore store)
             .SelectMany(v => v.Lines).GroupBy(l => l.ProductId)
             .Select(g => new ProfitRow(g.Last().ProductName, g.Sum(l => l.Quantity), g.Sum(l => l.NetRevenue),
                 g.Sum(l => Money.Round(l.Quantity * l.UnitCost)), g.Sum(l => l.Profit))).OrderByDescending(r => r.Profit).ToList();
+    internal static void ValidateCashOpeningDefault(decimal value) => Currency(value, "Fundo de troco sugerido");
     public void SaveSettings(StoreSettings settings)
     {
         Store.Update(s =>
         {
             var actor = Actor(s, true); settings.Name = Required(settings.Name, "o nome do depósito", 80);
+            ValidateCashOpeningDefault(settings.CashOpeningDefault);
             settings.GitHubUpdates = ValidateUpdateSettings(settings.GitHubUpdates);
             if (settings.DefaultPrinterId is not null && !s.Printers.Any(p => p.Id == settings.DefaultPrinterId)) settings.DefaultPrinterId = null;
             if (settings.DefaultScaleId is not null && !s.Scales.Any(p => p.Id == settings.DefaultScaleId)) settings.DefaultScaleId = null;

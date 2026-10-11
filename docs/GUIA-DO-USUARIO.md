@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.2.0
+# Guia do Giro Bebidas — versão 1.3.0
 
 ## Instalação e primeiro acesso
 
@@ -27,6 +27,10 @@ Depois do cadastro, alterações de quantidade são feitas por **Entrada / ajust
 Em **Caixa → Abrir caixa**, informe o fundo de troco. Há um único caixa aberto por computador, utilizado pelos usuários autorizados.
 
 O indicador no alto da tela fica verde quando o caixa está aberto e vermelho claro quando está fechado.
+
+Clique nesse indicador para abrir o menu. A primeira opção alterna entre **Abrir caixa** e **Fechar caixa**, mantendo a confirmação dos valores. **Histórico de caixas** leva à tabela de aberturas e fechamentos. O menu também funciona pelo teclado e pode ser fechado com **Esc**.
+
+Em **Configurações do caixa**, o administrador pode definir o fundo de troco sugerido e ativar ou desativar a impressão automática dos cupons. O fundo sugerido preenche a abertura, mas pode ser ajustado antes de confirmar; salvar a configuração não abre nem movimenta o caixa. A opção de configurações fica desabilitada para operadores.
 
 No **Frente de caixa**, clique no produto ou busque pelo nome, SKU ou código de barras. **F2** posiciona o cursor na busca; **Enter** adiciona o produto encontrado. O leitor USB deve estar configurado para digitar como teclado e enviar Enter depois do código.
 

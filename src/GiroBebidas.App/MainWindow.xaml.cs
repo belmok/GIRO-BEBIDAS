@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -40,6 +41,42 @@ public partial class MainWindow : Window
     }
     private void Logout_Click(object sender, RoutedEventArgs e) { ReturnToLogin = true; Close(); }
     private void DismissMessage_Click(object sender, RoutedEventArgs e) => Vm.Message = "";
+    private void CashStatusButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CashStatusMenu.IsOpen) Vm.Refresh();
+        CashStatusMenu.PlacementTarget = CashStatusButton;
+        CashStatusMenu.Placement = PlacementMode.Bottom;
+        CashStatusMenu.HorizontalOffset = CashStatusButton.ActualWidth - CashStatusMenu.Width;
+        CashStatusMenu.VerticalOffset = 5;
+        CashStatusMenu.IsOpen = !CashStatusMenu.IsOpen;
+    }
+    private void CashPrimaryAction_Click(object sender, RoutedEventArgs e)
+    {
+        CashStatusMenu.IsOpen = false;
+        if (Vm.CashIsOpen) CloseCash_Click(sender, e); else OpenCash_Click(sender, e);
+    }
+    private void CashHistory_Click(object sender, RoutedEventArgs e)
+    {
+        CashStatusMenu.IsOpen = false; Vm.Refresh(); Vm.Page = "Caixa";
+        Dispatcher.InvokeAsync(() => { CashHistoryGrid.BringIntoView(); CashHistoryGrid.Focus(); }, DispatcherPriority.Loaded);
+    }
+    private void CashSettings_Click(object sender, RoutedEventArgs e)
+    {
+        CashStatusMenu.IsOpen = false;
+        Guard(() => { if (CreateCashSettingsDialog().ShowDialog() == true) Notify("Configurações do caixa salvas."); });
+    }
+    internal FormDialog CreateCashSettingsDialog()
+    {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+        var settings = Vm.Service.Snapshot.Settings;
+        var d = new FormDialog(this, "Configurações do caixa", "Ajuste os valores sugeridos e a impressão dos cupons.", "Salvar configurações");
+        d.Number("opening", "Fundo de troco sugerido (R$)", settings.CashOpeningDefault);
+        d.Info("O valor é sugerido ao abrir um caixa. Confira o dinheiro disponível e ajuste antes de confirmar.");
+        d.Check("autoprint", "Imprimir cupom automaticamente após a venda", settings.AutoPrint);
+        d.Info($"Impressora padrão: {Vm.PrinterDefaultLabel}. Cadastre ou altere a impressora em Equipamentos.");
+        d.Submit = f => { settings.CashOpeningDefault = f.Decimal("opening"); settings.AutoPrint = f.Checked("autoprint"); Vm.Service.SaveSettings(settings); };
+        return d;
+    }
     private void ProductGrid_Click(object sender, RoutedEventArgs e) => Vm.IsProductsList = false;
     private void ProductList_Click(object sender, RoutedEventArgs e) => Vm.IsProductsList = true;
     private void ProductViewport_SizeChanged(object sender, SizeChangedEventArgs e) => ResizeProductCards();
@@ -209,9 +246,18 @@ public partial class MainWindow : Window
     });
     private void OpenCash_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
-        var d = new FormDialog(this, "Abrir caixa", "Informe o dinheiro disponível para troco.", "Abrir caixa"); d.Number("opening", "Fundo de troco (R$)");
-        d.Submit = f => Vm.Service.OpenCash(f.Decimal("opening")); if (d.ShowDialog() == true) Notify("Caixa aberto. Bom trabalho!");
+        var d = CreateOpenCashDialog();
+        if (d.ShowDialog() == true) Notify("Caixa aberto. Bom trabalho!");
     });
+    internal FormDialog CreateOpenCashDialog()
+    {
+        var state = Vm.Service.Snapshot;
+        if (state.CashSessions.Any(c => c.ClosedAt is null)) throw new InvalidOperationException("Já há um caixa aberto.");
+        var d = new FormDialog(this, "Abrir caixa", "Informe o dinheiro disponível para troco.", "Abrir caixa");
+        d.Number("opening", "Fundo de troco (R$)", state.Settings.CashOpeningDefault);
+        d.Submit = f => Vm.Service.OpenCash(f.Decimal("opening"));
+        return d;
+    }
     private void MoveCash_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         var d = new FormDialog(this, "Movimentar caixa", "Suprimento adiciona dinheiro. Sangria registra a retirada.");

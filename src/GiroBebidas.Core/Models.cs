@@ -34,6 +34,7 @@ public class StoreSettings
     public string Document { get; set; } = "";
     public string ReceiptFooter { get; set; } = "Obrigado pela preferência. Volte sempre!";
     public bool AutoPrint { get; set; }
+    public decimal CashOpeningDefault { get; set; }
     public bool DailyBackup { get; set; } = true;
     public GitHubUpdateSettings GitHubUpdates { get; set; } = new() { Repository = "belmok/GIRO-BEBIDAS", AutoCheck = true };
     public Guid? DefaultPrinterId { get; set; }

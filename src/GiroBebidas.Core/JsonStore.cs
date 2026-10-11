@@ -37,6 +37,8 @@ public sealed class JsonStore
         // Older backups receive the property initializer; malformed explicit values are rejected.
         if (result.Settings is not null)
         {
+            try { StoreService.ValidateCashOpeningDefault(result.Settings.CashOpeningDefault); }
+            catch (InvalidOperationException ex) { throw new InvalidDataException("O backup contém um fundo de troco sugerido inválido.", ex); }
             try { result.Settings.GitHubUpdates = StoreService.ValidateUpdateSettings(result.Settings.GitHubUpdates); }
             catch (InvalidOperationException ex) { throw new InvalidDataException("O backup contém uma configuração de atualizações inválida.", ex); }
         }

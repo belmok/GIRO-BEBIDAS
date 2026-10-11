@@ -33,6 +33,7 @@ public sealed class MainViewModel : Observable
     public decimal Subtotal => Cart.Sum(l => l.Total);
     public decimal Total => Subtotal - Discount + DeliveryFee;
     public string CashStatus => Snapshot.CashSessions.Any(c => c.ClosedAt is null) ? "Caixa aberto" : "Caixa fechado";
+    public string CashActionLabel => CashIsOpen ? "Fechar caixa" : "Abrir caixa";
     public string ProductCount => $"{Tiles.Count} produto{(Tiles.Count == 1 ? " encontrado" : "s encontrados")}";
     public string GridViewVisibility => IsProductsList ? "Collapsed" : "Visible";
     public string ListViewVisibility => IsProductsList ? "Visible" : "Collapsed";
@@ -178,7 +179,7 @@ public sealed class MainViewModel : Observable
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
         FilterProducts(); FilterStock(); FilterClients(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
-        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(CashSessions), nameof(CashMovements), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
+        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(CashSessions), nameof(CashMovements), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }
 }

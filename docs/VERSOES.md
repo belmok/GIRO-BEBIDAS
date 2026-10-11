@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.3.0 — 11/10/2026
+
+Indicador de caixa transformado em botão com seta e menu arredondado. A ação principal alterna entre Abrir caixa e Fechar caixa conforme a situação atual. Histórico de caixas leva diretamente à tabela de aberturas e fechamentos; Configurações do caixa permite ao administrador ajustar o fundo de troco sugerido e a impressão automática dos cupons.
+
+As ações reutilizam a abertura e o fechamento com confirmação de valores. Operadores mantêm acesso às operações e ao histórico; as configurações são protegidas no menu e no serviço. O fundo sugerido não movimenta dinheiro, aceita valores não negativos com até duas casas decimais e é preservado no backup. Backups anteriores recebem valor zero. Cores vermelho/verde, pesquisa, grade/lista e rodapé da versão 1.2.0 permanecem.
+
+201 verificações de regras, persistência, backup e permissões aprovadas. Compilação sem avisos ou erros. Menu e formulário renderizados no aplicativo WPF; ação atualizada sem reabrir, fechamento por Esc e clique externo, acesso ao histórico e restrição de configurações para operadores conferidos em dados isolados.
+
 ## 1.2.0 — 11/10/2026
 
 Frente de caixa redesenhada a partir da referência visual: cabeçalho com ícone, categorias ilustradas, cartões adaptáveis ao tamanho da janela, alternância entre grade e lista, contagem de resultados e mensagem para pesquisa sem resultados. O carrinho apresenta miniaturas dos produtos, controles de quantidade e valores em destaque, com rolagem na janela menor.
