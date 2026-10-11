@@ -11,6 +11,7 @@ public sealed class MainViewModel : Observable
     public ObservableCollection<CartLine> Cart { get; } = [];
     public List<NavItem> Navigation { get; }
     public string StoreName => Service.Snapshot.Settings.Name;
+    public string VersionLabel => $"Versão {typeof(StoreService).Assembly.GetName().Version!.ToString(3)} • Windows";
     public string OperatorName => Service.CurrentUser?.Name ?? "";
     public string OperatorInitial => OperatorName.Length > 0 ? OperatorName[..1].ToUpperInvariant() : "G";
     public string OperatorRole => Service.CurrentUser?.RoleLabel ?? "";
@@ -50,6 +51,13 @@ public sealed class MainViewModel : Observable
     public string CashOpenedLabel => Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null) is { } c ? $"Aberto por {c.OpenedBy}, em {c.OpenedAt:dd/MM 'às' HH:mm}" : "Abra um caixa para começar a registrar vendas.";
     public string PrinterDefaultLabel => Snapshot.Printers.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultPrinterId)?.Name ?? "Nenhuma impressora padrão";
     public string ScaleDefaultLabel => Snapshot.Scales.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultScaleId)?.Name ?? "Pesagem manual";
+    public string FiscalIssuerLabel => Snapshot.Fiscal.Issuer.LegalName.Length > 0 ? Snapshot.Fiscal.Issuer.LegalName : "Cadastre os dados reais da empresa";
+    public string FiscalEnvironmentLabel => Snapshot.Fiscal.EnvironmentLabel;
+    public string FiscalNumberLabel => $"Modelo 65 • série {Snapshot.Fiscal.ActiveProfile.Series} • próximo número {Snapshot.Fiscal.ActiveProfile.NextNumber}";
+    public string FiscalCertificateLabel => Snapshot.Fiscal.Certificate.IsImported ? $"A1 importado • validade {Snapshot.Fiscal.Certificate.NotAfter:dd/MM/yyyy}" : "Nenhum certificado importado";
+    public string FiscalCscLabel => Snapshot.Fiscal.ActiveProfile.ProtectedCsc.Length > 0 ? $"CSC {Snapshot.Fiscal.ActiveProfile.CscId} • token protegido" : "CSC do ambiente ainda não cadastrado";
+    public string FiscalPrinterLabel => Snapshot.Printers.FirstOrDefault(p => p.Id == Snapshot.Fiscal.Options.PrinterId)?.Name ?? "Escolha uma impressora em Configurar NFC-e";
+    public List<FiscalCheck> FiscalChecks { get; private set; } = [];
     public decimal TodayTotal => Snapshot.Sales.Where(v => !v.Canceled && v.Date.LocalDateTime.Date == DateTime.Today).Sum(v => v.Total);
     public int TodayCount => Snapshot.Sales.Count(v => !v.Canceled && v.Date.LocalDateTime.Date == DateTime.Today);
     public decimal TodayProfit => Snapshot.Sales.Where(v => !v.Canceled && v.Date.LocalDateTime.Date == DateTime.Today).Sum(v => v.Profit);
@@ -71,7 +79,7 @@ public sealed class MainViewModel : Observable
     private string page = "PDV", search = "", category = "Todos", stockSearch = "", clientSearch = "", reportPeriod = "Últimos 30 dias", message = "";
     private decimal discount, deliveryFee;
     private CustomerChoice? cartCustomer;
-    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); } } }
+    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value == "Fiscal" && IsAdmin) BuildFiscalChecks(); } } }
     public string Search { get => search; set { if (Set(ref search, value)) FilterProducts(); } }
     public string StockSearch { get => stockSearch; set { if (Set(ref stockSearch, value)) FilterStock(); } }
     public string ClientSearch { get => clientSearch; set { if (Set(ref clientSearch, value)) FilterClients(); } }
@@ -81,8 +89,8 @@ public sealed class MainViewModel : Observable
     public decimal Discount { get => discount; set { if (Set(ref discount, value)) Changed(nameof(Total)); } }
     public decimal DeliveryFee { get => deliveryFee; set { if (Set(ref deliveryFee, value)) Changed(nameof(Total)); } }
     public CustomerChoice? CartCustomer { get => cartCustomer; set => Set(ref cartCustomer, value); }
-    public string PageTitle => Page switch { "PDV" => "Frente de caixa", "Estoque" => "Produtos e estoque", "Clientes" => "Clientes e fiados", "Caixa" => "Controle do caixa", "Vendas" => "Histórico de vendas", "Relatórios" => "Resultados do depósito", "Usuários" => "Usuários e acessos", "Equipamentos" => "Impressoras e balanças", "Configurações" => "Configurações", _ => "Pedidos e entregas" };
-    public string PageSubtitle => Page switch { "PDV" => "Tudo pronto para a próxima venda.", "Estoque" => "Cuide dos seus produtos e acompanhe cada movimentação.", "Clientes" => "Um atendimento próximo, com crédito sob controle.", "Caixa" => "Entradas, saídas e fechamento em um só lugar.", "Vendas" => "Consulte vendas, reimprima cupons e confira os detalhes.", "Relatórios" => "Acompanhe a receita, o custo e o lucro dos seus produtos.", "Usuários" => "Defina quem pode acessar e administrar o depósito.", "Equipamentos" => "Conecte o que você usa no balcão.", "Configurações" => "Deixe o sistema com a cara do seu negócio.", _ => "Do balcão até a entrega, acompanhe cada pedido." };
+    public string PageTitle => Page switch { "PDV" => "Frente de caixa", "Estoque" => "Produtos e estoque", "Clientes" => "Clientes e fiados", "Caixa" => "Controle do caixa", "Vendas" => "Histórico de vendas", "Relatórios" => "Resultados do depósito", "Usuários" => "Usuários e acessos", "Equipamentos" => "Impressoras e balanças", "Fiscal" => "Cupom fiscal e NFC-e", "Configurações" => "Configurações", _ => "Pedidos e entregas" };
+    public string PageSubtitle => Page switch { "PDV" => "Tudo pronto para a próxima venda.", "Estoque" => "Cuide dos seus produtos e acompanhe cada movimentação.", "Clientes" => "Um atendimento próximo, com crédito sob controle.", "Caixa" => "Entradas, saídas e fechamento em um só lugar.", "Vendas" => "Consulte vendas, reimprima cupons e confira os detalhes.", "Relatórios" => "Acompanhe a receita, o custo e o lucro dos seus produtos.", "Usuários" => "Defina quem pode acessar e administrar o depósito.", "Equipamentos" => "Conecte o que você usa no balcão.", "Fiscal" => "Prepare os dados fiscais e acompanhe o que falta configurar.", "Configurações" => "Deixe o sistema com a cara do seu negócio.", _ => "Do balcão até a entrega, acompanhe cada pedido." };
     public ICommand AddProductCommand { get; }
     public ICommand IncrementCommand { get; }
     public ICommand DecrementCommand { get; }
@@ -94,7 +102,7 @@ public sealed class MainViewModel : Observable
     {
         Service = service;
         Navigation = [new("PDV", "Frente de caixa", "\uE719"), new("Pedidos", "Pedidos e entregas", "\uE8CB"), new("Clientes", "Clientes e fiados", "\uE716"), new("Caixa", "Caixa", "\uE8C7"), new("Vendas", "Vendas", "\uE9D9")];
-        if (service.IsAdmin) { Navigation.Insert(2, new("Estoque", "Produtos e estoque", "\uE7B8")); Navigation.AddRange([new("Relatórios", "Relatórios", "\uE9D2"), new("Usuários", "Usuários", "\uE77B"), new("Equipamentos", "Equipamentos", "\uE772"), new("Configurações", "Configurações", "\uE713")]); }
+        if (service.IsAdmin) { Navigation.Insert(2, new("Estoque", "Produtos e estoque", "\uE7B8")); Navigation.AddRange([new("Relatórios", "Relatórios", "\uE9D2"), new("Usuários", "Usuários", "\uE77B"), new("Equipamentos", "Equipamentos", "\uE772"), new("Fiscal", "Cupom fiscal", "\uE8A5"), new("Configurações", "Configurações", "\uE713")]); }
         AddProductCommand = new RelayCommand(p => { if (p is ProductTile tile) { if (tile.Product.IsWeighed) RequestWeight?.Invoke(tile.Product); else AddProduct(tile.Product, 1); } }, _ => CanEditCart);
         IncrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed) RequestWeight?.Invoke(line.Product); else AddProduct(line.Product, 1); } }, _ => CanEditCart);
         DecrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed || line.Quantity <= 1) Cart.Remove(line); else line.Quantity--; CartChanged(); } }, _ => CanEditCart);
@@ -141,6 +149,7 @@ public sealed class MainViewModel : Observable
         ProfitRows = StoreService.ProfitReport(Snapshot, from);
         foreach (string property in new[] { nameof(ProfitRows), nameof(ReportRevenue), nameof(ReportCost), nameof(ReportProfit), nameof(ReportMargin) }) Changed(property);
     }
+    public void BuildFiscalChecks() { FiscalChecks = Service.CheckFiscalConfiguration(); Changed(nameof(FiscalChecks)); }
     public void Refresh()
     {
         Snapshot = Service.Snapshot;
@@ -153,8 +162,8 @@ public sealed class MainViewModel : Observable
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
-        FilterProducts(); FilterStock(); FilterClients(); BuildReport();
-        foreach (string property in new[] { nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(CashSessions), nameof(CashMovements), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount) }) Changed(property);
+        FilterProducts(); FilterStock(); FilterClients(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
+        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(CashSessions), nameof(CashMovements), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }
 }

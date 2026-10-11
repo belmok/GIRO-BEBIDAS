@@ -25,14 +25,17 @@ O cadastro inicial contém 16 produtos fictícios para experimentar. Não há ve
 - Cadastro de impressoras do Windows, papel 58/80 mm e A4, impressão automática opcional.
 - Cadastro e teste de balanças seriais 8N1, leitura de texto em kg ou inteiro em gramas, pesagem manual.
 - Backup completo com fotos e usuários, cópias diárias, restauração e registro de operações.
+- Configuração de NFC-e, certificado A1/CSC protegidos, campos fiscais de produtos e conferência das pendências.
 
 ## Persistência
 
 Os dados ficam em `%LOCALAPPDATA%\GiroBebidas\giro-dados.json`. São gravados atomicamente, com cópia `.bak` da versão anterior. Antes da primeira alteração de cada dia é criada uma cópia em `Backups/`. A restauração preserva os dados anteriores em um arquivo separado e encerra a sessão.
 
-O aplicativo usa uma única instância por pasta de dados. A gravação de uma venda, baixa do estoque e lançamento no caixa ocorre em uma única transação do repositório. O arquivo é local: esta versão é para um computador, sem servidor compartilhado ou sincronização entre terminais. O login protege o uso do aplicativo; quem tem acesso direto à pasta do Windows pode ler ou alterar os arquivos. As senhas são armazenadas como hashes, mas o restante do backup não é criptografado.
+O aplicativo usa uma única instância por pasta de dados. A gravação de uma venda, baixa do estoque e lançamento no caixa ocorre em uma única transação do repositório. O arquivo é local: esta versão é para um computador, sem servidor compartilhado ou sincronização entre terminais. O login protege o uso do aplicativo; quem tem acesso direto à pasta do Windows pode ler ou alterar os arquivos. Senhas de login são armazenadas como hashes; certificado A1, sua senha e tokens CSC são protegidos pelo Windows. Os demais cadastros, fotos e movimentos do backup não são criptografados.
 
 ## Limites da versão
+
+A tela **Cupom fiscal** permite configurar emitente, CRT, UF/IBGE, ambiente, série, numeração, certificado A1, CSC e impressora. Homologação e produção mantêm parâmetros separados. Os produtos têm campos opcionais de NCM, CEST, CFOP, CSOSN/CST e origem. Certificado, senha e CSC são protegidos com DPAPI para o usuário do Windows e incluídos no backup; em outro computador ou usuário do Windows, precisam ser cadastrados novamente. A conferência local não verifica credenciamento, cadastro público, cadeia ICP-Brasil ou tributação. A emissão SEFAZ não está integrada: não gera XML fiscal, chave, QR Code, protocolo ou DANFE autorizado.
 
 O cupom é **não fiscal**. Não há emissão de NF-e/NFC-e, TEF, confirmação bancária automática de Pix ou integração de maquininha. As formas de pagamento registram o recebimento informado pelo operador. Impressoras exigem driver instalado; balanças dependem de protocolo compatível e precisam ser testadas no equipamento real. Não há balança conectada neste projeto. Cancelamentos são permitidos no caixa de origem ainda aberto, sem recebimentos de fiado já efetuados. O lucro mostrado é bruto dos produtos, excluindo frete, taxas financeiras e despesas gerais.
 

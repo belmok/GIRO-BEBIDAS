@@ -12,7 +12,7 @@
 
 Em **Usuários → Criar usuário**, informe nome, usuário, perfil, senha e confirmação. Use **Editar / redefinir senha** para alterar dados ou redefinir o acesso. Deixe os campos de senha vazios para manter a senha atual. Desmarque **Usuário ativo** para suspender o acesso.
 
-O administrador pode usar todas as funções. O operador pode vender, controlar pedidos, cadastrar clientes, receber fiados e operar o caixa. Somente o administrador acessa produtos, relatórios de lucro, equipamentos, usuários, configurações, cancelamento de venda e backup. O sistema impede a remoção do último administrador ativo e a desativação da própria conta.
+O administrador pode usar todas as funções. O operador pode vender, controlar pedidos, cadastrar clientes, receber fiados e operar o caixa. Somente o administrador acessa produtos, relatórios de lucro, equipamentos, usuários, configurações, configuração fiscal, cancelamento de venda e backup. O sistema impede a remoção do último administrador ativo e a desativação da própria conta.
 
 ## Cadastrar produtos e fotos
 
@@ -58,9 +58,24 @@ Em **Adicionar balança**, informe nome, porta COM, velocidade e formato de leit
 
 Esse recurso precisa ser compatível com o protocolo real da balança. USB só funciona neste módulo se o equipamento disponibilizar uma porta COM serial. Outros protocolos exigem adaptação. Sem balança, digite o peso em kg manualmente na venda.
 
+## Configuração do cupom fiscal
+
+O administrador encontra a tela **Cupom fiscal** no menu. Ela prepara os parâmetros de **NFC-e, modelo 65**. A emissão ainda depende de integração com um emissor SEFAZ; preencher esta tela não transforma o comprovante atual em documento fiscal.
+
+1. Em **Dados da empresa**, informe razão social, nome fantasia, CNPJ, inscrição estadual, regime tributário (CRT), UF, município, código IBGE e endereço. O cadastro aceita CNPJ numérico e alfanumérico e confere os dígitos verificadores. É possível salvar um cadastro parcial.
+2. Em **Configurar NFC-e**, escolha homologação ou produção, série, próximo número, identificação do caixa e uma impressora cadastrada em **Equipamentos**. Cada ambiente mantém sua própria série e numeração. Vendas não fiscais não consomem esses números.
+3. Em **Importar A1**, escolha o certificado `.pfx` ou `.p12` e informe a senha. O sistema verifica a abertura, a presença da chave privada e a validade. Não certifica a cadeia ICP-Brasil nem a titularidade do emitente. Certificados A3, tokens e cartões não são atendidos neste módulo.
+4. Em **Cadastrar / trocar CSC**, selecione o ambiente e informe identificador e token fornecidos pela SEFAZ. Os códigos de homologação e produção ficam separados; o token salvo não é exibido.
+5. No cadastro dos produtos, preencha NCM, CEST quando aplicável, CFOP de saída, CSOSN ou CST de ICMS e origem da mercadoria, conforme orientação contábil. Esses campos verificam o formato e não calculam os tributos nem substituem uma configuração tributária completa.
+6. Use **Conferir configuração** para ver as pendências. A conferência é local, sem consultar credenciamento ou autorização na SEFAZ. Mesmo com os campos preenchidos, a integração do emissor permanece pendente nesta versão.
+
+Certificado A1, sua senha e o token CSC são protegidos pelo Windows e acompanham o backup. Ao restaurar em outro computador ou usuário do Windows, reimporte o A1 e cadastre os CSCs novamente. Mantenha também o arquivo original do certificado em local seguro.
+
+A referência enviada descreve SAT/MFE (CF-e modelo 59). Esta versão concentra os parâmetros em NFC-e. Para São Paulo, a emissão de CF-e-SAT foi vedada a partir de 1º de janeiro de 2026, conforme a [SEFAZ-SP](https://legislacao.fazenda.sp.gov.br/Paginas/RC32314_2025.aspx). A configuração e o credenciamento devem seguir a SEFAZ da UF do estabelecimento.
+
 ## Backup
 
-Abra **Configurações → Criar backup** e salve o arquivo em outra unidade ou na nuvem. O backup inclui produtos, fotos, usuários, clientes, pedidos, caixa e vendas. Também existe uma cópia diária automática na pasta `Backups` e uma cópia `.bak` da gravação anterior.
+Abra **Configurações → Criar backup** e salve o arquivo em outra unidade ou na nuvem. O backup inclui produtos, fotos, usuários, clientes, pedidos, caixa, vendas e configuração fiscal, com certificado e CSC protegidos pelo Windows. Também existe uma cópia diária automática na pasta `Backups` e uma cópia `.bak` da gravação anterior.
 
 Para recuperar, feche o caixa, limpe a venda atual e escolha **Restaurar backup**. Confirme o arquivo. O sistema valida a versão, preserva uma cópia dos dados atuais e pede novo login. Os usuários e senhas voltam ao estado do backup restaurado. Os backups têm dados pessoais e devem ser guardados em local de acesso restrito.
 

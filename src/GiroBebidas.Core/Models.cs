@@ -11,6 +11,7 @@ public class StoreState
     public long NextSaleNumber { get; set; } = 1;
     public long NextOrderNumber { get; set; } = 1;
     public StoreSettings Settings { get; set; } = new();
+    public FiscalConfiguration Fiscal { get; set; } = new();
     public List<UserAccount> Users { get; set; } = [];
     public List<Product> Products { get; set; } = [];
     public List<Customer> Customers { get; set; } = [];
@@ -72,6 +73,7 @@ public class Product
     public bool Active { get; set; } = true;
     public string Color { get; set; } = "#15803D";
     public string Package { get; set; } = "Lata";
+    public ProductTaxData Tax { get; set; } = new();
     public bool IsWeighed => Unit == "kg";
     public string StockLabel => $"{Stock:0.###} {Unit}";
     public string StockStatus => Stock <= 0 ? "Sem estoque" : Stock <= MinimumStock ? "Estoque baixo" : "Disponível";

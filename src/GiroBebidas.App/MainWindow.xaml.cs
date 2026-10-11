@@ -86,10 +86,17 @@ public partial class MainWindow : Window
         d.Number("wholesale", "Preço de atacado (R$) • zero para desativar", p.WholesalePrice); d.Number("threshold", "Quantidade mínima para atacado", p.WholesaleMinimum);
         d.Number("stock", editing ? "Estoque físico • use Entrada / ajuste para movimentar" : "Estoque inicial", p.Stock, !editing);
         d.Number("min", "Estoque mínimo", p.MinimumStock); d.Check("active", "Produto ativo para venda", p.Active);
+        d.Info("Dados fiscais do produto • opcionais nesta versão. Preencha com orientação do contador; a conferência verifica o formato, sem definir automaticamente a tributação.");
+        d.Text("ncm", "NCM • 8 dígitos", p.Tax.Ncm); d.Text("cest", "CEST • 7 dígitos, quando aplicável", p.Tax.Cest); d.Text("cfop", "CFOP de saída • 4 dígitos", p.Tax.Cfop);
+        d.Choice("csosn", "CSOSN • Simples Nacional / MEI", new[] { "" }.Concat(FiscalValidation.CsosnCodes), p.Tax.Csosn);
+        d.Choice("cst", "CST de ICMS • regime normal / excesso de sublimite", new[] { "" }.Concat(FiscalValidation.CstCodes), p.Tax.Cst);
+        var origins = new FiscalChoice<int?>[] { new(null, "Selecione a origem"), new(0, "0 • Nacional"), new(1, "1 • Estrangeira: importação direta"), new(2, "2 • Estrangeira: mercado interno"), new(3, "3 • Nacional: importação acima de 40% até 70%"), new(4, "4 • Nacional: processos produtivos básicos"), new(5, "5 • Nacional: importação até 40%"), new(6, "6 • Estrangeira: importação direta, sem similar nacional"), new(7, "7 • Estrangeira: mercado interno, sem similar nacional"), new(8, "8 • Nacional: importação acima de 70%") };
+        d.Choice("origin", "Origem da mercadoria", origins, origins.First(o => o.Value == p.Tax.Origin), nameof(FiscalChoice<int?>.Label));
         d.Submit = f => Vm.Service.SaveProduct(new() { Id = p.Id, Name = f.Value("name"), Description = f.Value("description"), PhotoBase64 = photo,
             Code = f.Value("code"), Barcode = f.Value("barcode"), Category = f.Value("category"), Unit = f.Value("unit"), Package = f.Value("package"), Color = p.Color,
             Cost = f.Decimal("cost"), Price = f.Decimal("price"), WholesalePrice = f.Decimal("wholesale"), WholesaleMinimum = f.Decimal("threshold"),
-            Stock = f.Decimal("stock"), MinimumStock = f.Decimal("min"), Active = f.Checked("active") });
+            Stock = f.Decimal("stock"), MinimumStock = f.Decimal("min"), Active = f.Checked("active"),
+            Tax = new() { Ncm = f.Value("ncm"), Cest = f.Value("cest"), Cfop = f.Value("cfop"), Csosn = f.Value("csosn"), Cst = f.Value("cst"), Origin = f.Selected<FiscalChoice<int?>>("origin").Value } });
         return d;
     }
     private void AdjustStock_Click(object sender, RoutedEventArgs e) => Guard(() =>

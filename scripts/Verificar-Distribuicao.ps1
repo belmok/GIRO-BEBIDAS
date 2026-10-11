@@ -33,6 +33,9 @@ $taskInstalledHash = (Get-FileHash -LiteralPath (Join-Path $taskInstalled 'GiroB
 if ($taskSourceHash -ne $taskInstalledHash) { throw 'Executável extraído não confere com a distribuição.' }
 Invoke-GiroCheck -TaskExecutable (Join-Path $taskInstalled 'GiroBebidas.exe') -TaskArguments @('--ui-smoke', '--data-dir', $taskData, '--output', $taskScreens)
 if (-not (Test-Path -LiteralPath (Join-Path $taskScreens 'smoke-ok.txt'))) { throw 'Verificação visual incompleta.' }
+foreach ($taskFiscalImage in @('16-configuracao-fiscal.png', '17-empresa-emitente.png', '18-parametros-nfce.png', '19-dados-fiscais-produto.png', '20-conferencia-fiscal.png')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $taskScreens $taskFiscalImage))) { throw 'A verificação visual fiscal ficou incompleta.' }
+}
 Write-Output 'OK: aplicativo instalado abre, renderiza os módulos e salva foto e backup.'
 $taskExtra = Join-Path $taskInstalled 'arquivo-do-usuario.txt'
 [System.IO.File]::WriteAllText($taskExtra, 'preservar')

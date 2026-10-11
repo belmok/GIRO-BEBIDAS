@@ -80,4 +80,5 @@ public sealed class FormDialog : Window
     }
     public T Selected<T>(string key) => (T)((ComboBox)fields[key]).SelectedItem;
     public bool Checked(string key) => ((CheckBox)fields[key]).IsChecked == true;
+    internal void ScrollToField(string key) { if (fields.TryGetValue(key, out var field)) field.BringIntoView(); }
 }

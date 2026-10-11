@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace GiroBebidas.Core;
 
-public sealed class StoreService(JsonStore store)
+public sealed partial class StoreService(JsonStore store)
 {
     public JsonStore Store { get; } = store;
     public Guid? CurrentUserId { get; private set; }
@@ -112,6 +112,7 @@ public sealed class StoreService(JsonStore store)
             input.Barcode = input.Barcode.Trim();
             input.Category = Required(input.Category, "a categoria", 40);
             if (input.Unit is not ("un" or "cx" or "kg")) throw new InvalidOperationException("Unidade inválida.");
+            FiscalValidation.ValidateProduct(input.Tax);
             Currency(input.Price, "Preço", true); Currency(input.Cost, "Custo"); Currency(input.WholesalePrice, "Preço de atacado");
             if (input.Stock < 0 || input.MinimumStock < 0 || input.WholesaleMinimum < 0) throw new InvalidOperationException("Estoque e quantidades não podem ser negativos.");
             if (input.Stock > 0) Quantity(input.Stock, input);
@@ -410,7 +411,7 @@ public sealed class StoreService(JsonStore store)
         Store.Update(s =>
         {
             var actor = Actor(s, true);
-            if (printer) { s.Printers.RemoveAll(p => p.Id == id); if (s.Settings.DefaultPrinterId == id) s.Settings.DefaultPrinterId = null; }
+            if (printer) { s.Printers.RemoveAll(p => p.Id == id); if (s.Settings.DefaultPrinterId == id) s.Settings.DefaultPrinterId = null; if (s.Fiscal.Options.PrinterId == id) s.Fiscal.Options.PrinterId = null; }
             else { s.Scales.RemoveAll(p => p.Id == id); if (s.Settings.DefaultScaleId == id) s.Settings.DefaultScaleId = null; }
             Log(s, actor, "Equipamento removido"); return 0;
         });

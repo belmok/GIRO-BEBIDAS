@@ -34,12 +34,13 @@ public sealed class JsonStore
     private static StoreState Read(string path)
     {
         StoreState result = JsonSerializer.Deserialize<StoreState>(File.ReadAllText(path), JsonOptions) ?? throw new InvalidDataException("Arquivo vazio.");
-        if (result.SchemaVersion != 1 || result.Settings is null || result.Users is null || result.Products is null || result.Customers is null
+        if (result.SchemaVersion != 1 || result.Settings is null || result.Fiscal is null || result.Fiscal.Issuer is null || result.Fiscal.Options is null
+            || result.Fiscal.Homologation is null || result.Fiscal.Production is null || result.Fiscal.Certificate is null || result.Users is null || result.Products is null || result.Customers is null
             || result.Sales is null || result.Orders is null || result.CashSessions is null || result.CashMovements is null || result.ReceivablePayments is null
             || result.StockMovements is null || result.Audit is null || result.Printers is null || result.Scales is null
             || result.Users.Count == 0 || !result.Users.Any(u => u is not null && u.Active && u.Role == UserRole.Administrador))
             throw new InvalidDataException("Versão de dados incompatível ou administrador ausente.");
-        if (result.Users.Any(u => u is null || string.IsNullOrWhiteSpace(u.Username) || u.PasswordHash is null || u.PasswordSalt is null) || result.Products.Any(p => p is null) || result.Customers.Any(c => c is null)
+        if (result.Users.Any(u => u is null || string.IsNullOrWhiteSpace(u.Username) || u.PasswordHash is null || u.PasswordSalt is null) || result.Products.Any(p => p is null || p.Tax is null) || result.Customers.Any(c => c is null)
             || result.Sales.Any(s => s is null || s.Lines is null) || result.Orders.Any(o => o is null || o.Lines is null))
             throw new InvalidDataException("O backup contém registros incompletos.");
         if (result.Users.Select(u => u.Id).Distinct().Count() != result.Users.Count || result.Users.Select(u => u.Username.ToUpperInvariant()).Distinct().Count() != result.Users.Count
@@ -86,8 +87,21 @@ public sealed class JsonStore
             }
             byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(next, JsonOptions);
             using (FileStream stream = new(temp, FileMode.Create, FileAccess.Write, FileShare.None)) { stream.Write(bytes); stream.Flush(true); }
-            if (File.Exists(FilePath)) File.Replace(temp, FilePath, FilePath + ".bak", true);
-            else File.Move(temp, FilePath);
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(FilePath)) File.Replace(temp, FilePath, FilePath + ".bak", true);
+                    else File.Move(temp, FilePath);
+                    break;
+                }
+                catch (IOException) when (attempt < 6 && File.Exists(temp))
+                {
+                    // A sync client or antivirus may briefly lock the previous backup.
+                    // Retry only while the pending file still exists; never repeat the business operation.
+                    Thread.Sleep(Math.Min(800, 50 * (1 << attempt)));
+                }
+            }
         }
         finally { if (File.Exists(temp)) File.Delete(temp); }
     }

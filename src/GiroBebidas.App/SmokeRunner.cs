@@ -38,10 +38,19 @@ public static class SmokeRunner
         service.ExportBackup(Path.Combine(output, "backup-com-foto.json"));
         var form = window.CreateProductDialog(photoProduct, false);
         // An unshown owner cannot be assigned to a visible window; clear it for offscreen QA.
-        form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = Math.Min(800, form.MaxHeight); Capture(form, Path.Combine(output, "12-cadastro-produto.png")); form.Close();
+        form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = Math.Min(800, form.MaxHeight); Capture(form, Path.Combine(output, "12-cadastro-produto.png"));
+        form.ScrollToField("origin"); Capture(form, Path.Combine(output, "19-dados-fiscais-produto.png")); form.Close();
+        vm.Page = "Fiscal"; Capture(window, Path.Combine(output, "16-configuracao-fiscal.png"));
+        window.FiscalConfigurationPanel.ShowChecks(); Capture(window, Path.Combine(output, "20-conferencia-fiscal.png"));
+        var issuerForm = window.FiscalConfigurationPanel.CreateIssuerDialog(); issuerForm.Owner = null; issuerForm.SizeToContent = SizeToContent.Manual; issuerForm.Height = Math.Min(800, issuerForm.MaxHeight);
+        Capture(issuerForm, Path.Combine(output, "17-empresa-emitente.png")); issuerForm.Close();
+        var fiscalForm = window.FiscalConfigurationPanel.CreateOptionsDialog(); fiscalForm.Owner = null; fiscalForm.SizeToContent = SizeToContent.Manual; fiscalForm.Height = Math.Min(730, fiscalForm.MaxHeight);
+        Capture(fiscalForm, Path.Combine(output, "18-parametros-nfce.png")); fiscalForm.Close();
+        if (service.Snapshot.Fiscal.Options.Environment != FiscalEnvironment.Homologacao || vm.FiscalChecks.Single(c => c.Item == "Autorização SEFAZ").Complete)
+            throw new InvalidOperationException("A configuração inicial não pode simular emissão fiscal autorizada.");
         window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
         vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e nove módulos renderizados. Cadastro completo de produto renderizado. Foto importada, persistida e exportada no backup. Layout menor renderizado.\n");
+        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida e exportada no backup. Layout menor renderizado.\n");
     }
     private static void Capture(Window window, string path)
     {
