@@ -34,6 +34,12 @@ public sealed class JsonStore
     private static StoreState Read(string path)
     {
         StoreState result = JsonSerializer.Deserialize<StoreState>(File.ReadAllText(path), JsonOptions) ?? throw new InvalidDataException("Arquivo vazio.");
+        // Older backups receive the property initializer; malformed explicit values are rejected.
+        if (result.Settings is not null)
+        {
+            try { result.Settings.GitHubUpdates = StoreService.ValidateUpdateSettings(result.Settings.GitHubUpdates); }
+            catch (InvalidOperationException ex) { throw new InvalidDataException("O backup contém uma configuração de atualizações inválida.", ex); }
+        }
         if (result.SchemaVersion != 1 || result.Settings is null || result.Fiscal is null || result.Fiscal.Issuer is null || result.Fiscal.Options is null
             || result.Fiscal.Homologation is null || result.Fiscal.Production is null || result.Fiscal.Certificate is null || result.Users is null || result.Products is null || result.Customers is null
             || result.Sales is null || result.Orders is null || result.CashSessions is null || result.CashMovements is null || result.ReceivablePayments is null

@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
- <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><AssemblyName>DesinstalarGiroBebidas</AssemblyName><RootNamespace>GiroBebidas.Setup</RootNamespace><DefineConstants>$(DefineConstants);UNINSTALLER</DefineConstants></PropertyGroup>
+ <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><AssemblyName>DesinstalarGiroBebidas</AssemblyName><RootNamespace>GiroBebidas.Setup</RootNamespace><DefineConstants>$(DefineConstants);UNINSTALLER</DefineConstants><ApplicationIcon>..\GiroBebidas.App\Assets\giro-bebidas-icon-v1.ico</ApplicationIcon></PropertyGroup>
  <ItemGroup><ProjectReference Include="..\GiroBebidas.Core\GiroBebidas.Core.csproj"/><Compile Include="..\GiroBebidas.Setup\InstallerApp.cs" Link="InstallerApp.cs" /></ItemGroup>
 </Project>

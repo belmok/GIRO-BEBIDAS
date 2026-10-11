@@ -79,6 +79,16 @@ Abra **Configurações → Criar backup** e salve o arquivo em outra unidade ou 
 
 Para recuperar, feche o caixa, limpe a venda atual e escolha **Restaurar backup**. Confirme o arquivo. O sistema valida a versão, preserva uma cópia dos dados atuais e pede novo login. Os usuários e senhas voltam ao estado do backup restaurado. Os backups têm dados pessoais e devem ser guardados em local de acesso restrito.
 
+## Atualizações do GitHub
+
+O administrador encontra **Atualizações** no menu. A versão 1.1.0 consulta por padrão o repositório público **belmok/GIRO-BEBIDAS** ao entrar. Você pode alterar o endereço ou desativar a consulta automática. A consulta não interrompe o atendimento nem instala arquivos automaticamente.
+
+Use **Verificar atualizações** para procurar uma versão estável mais recente. A publicação precisa conter `InstalarGiroBebidas.exe` e `SHA256.txt`. A tela mostra a versão e suas novidades. O botão **Baixar e instalar atualização** exige caixa fechado, carrinho vazio e uma cópia instalada pelo instalador. O download é conferido com SHA-256, e o sistema cria um backup na pasta `Backups` antes de abrir o instalador. Confirme o fechamento do PDV, instale na pasta já selecionada e reabra o aplicativo. Dados e fotos ficam preservados na pasta de dados.
+
+Se o download falhar ou for cancelado, tente novamente. Se ainda não houver uma publicação pública mais recente, o sistema informa essa situação. Cópias portáteis devem ser atualizadas manualmente pelo instalador. O fluxo não usa senhas ou tokens do GitHub e atende repositórios públicos.
+
+Para publicar uma versão, consulte [Atualizações via GitHub](ATUALIZACOES-GITHUB.md).
+
 ## Desinstalar
 
 Use **Desinstalar Giro Bebidas** no menu Iniciar ou no painel de aplicativos do Windows. Feche o PDV antes. Os dados são preservados por padrão. A opção **Excluir também todos os dados, fotos e backups locais** apaga a pasta local do depósito, mediante confirmação. Backups exportados para outras pastas são preservados.

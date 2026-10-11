@@ -212,6 +212,17 @@ try
     separate.RestoreBackup(oldBackup); separate.Login("ADMIN", "ADMIN");
     Equal(FiscalEnvironment.Homologacao, separate.Snapshot.Fiscal.Options.Environment, "Backup anterior recebe configuração fiscal inicial compatível");
     CryptographicOperations.ZeroMemory(pfx);
+    await GiroBebidas.Tests.GitHubUpdateChecks.RunAsync(root, Check);
+    separate.SaveUpdateSettings(new() { Repository = "https://github.com/belmok/GIRO-BEBIDAS", AutoCheck = true });
+    Equal("belmok/GIRO-BEBIDAS", separate.Snapshot.Settings.GitHubUpdates.Repository, "Repositório normalizado é persistido");
+    Check(new StoreService(new JsonStore(separate.Store.DirectoryPath)).Snapshot.Settings.GitHubUpdates.AutoCheck, "Consulta automática permanece após reabrir os dados");
+    Reject(() => separate.SaveUpdateSettings(new() { Repository = "https://outro.site/projeto" }), "Configuração recusa domínio externo");
+    Reject(() => restricted.SaveUpdateSettings(new() { Repository = "belmok/GIRO-BEBIDAS" }), "Operador não altera a origem das atualizações");
+    var legacyUpdates = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(separate.Store.FilePath))!.AsObject();
+    legacyUpdates["Settings"]!.AsObject().Remove("GitHubUpdates");
+    string legacyUpdatesBackup = Path.Combine(root, "backup-sem-atualizacoes.json"); File.WriteAllText(legacyUpdatesBackup, legacyUpdates.ToJsonString());
+    separate.RestoreBackup(legacyUpdatesBackup); separate.Login("ADMIN", "ADMIN");
+    Equal("belmok/GIRO-BEBIDAS", separate.Snapshot.Settings.GitHubUpdates.Repository, "Backup antigo recebe origem padrão de atualizações");
     Console.WriteLine($"\n{checks} verificações aprovadas. Dados de teste: {root}"); return 0;
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

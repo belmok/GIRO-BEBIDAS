@@ -35,7 +35,18 @@ public static class InstallerApp
             }
             catch (Exception ex) { File.WriteAllText(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, "instalacao-erro.txt"), ex.ToString()); return 1; }
         }
-        var app = new Application(); var window = new InstallerWindow();
+        string? updateDirectory = null;
+        if (args.Length >= 2 && args[0] == "--update-install-dir")
+        {
+            try
+            {
+                if (UninstallMode) throw new InvalidOperationException("Use o instalador para atualizar.");
+                updateDirectory = Path.GetFullPath(args[1]);
+                if (Installation.ReadManifest(updateDirectory) is null) throw new InvalidDataException("A pasta de atualização não contém uma instalação do Giro Bebidas.");
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Atualização do Giro Bebidas", MessageBoxButton.OK, MessageBoxImage.Error); return 1; }
+        }
+        var app = new Application(); var window = new InstallerWindow(updateDirectory);
         if (args.Length >= 2 && args[0] == "--ui-smoke")
         {
             window.Left = -10000; window.Top = -10000; window.WindowStartupLocation = WindowStartupLocation.Manual; window.ShowInTaskbar = false; window.ShowActivated = false;
@@ -58,7 +69,7 @@ public sealed class InstallerWindow : Window
     private readonly ProgressBar progress;
     private readonly Button primary;
     private bool busy, complete;
-    public InstallerWindow()
+    public InstallerWindow(string? updateDirectory = null)
     {
         bool uninstall = InstallerApp.UninstallMode;
         Title = uninstall ? "Desinstalar Giro Bebidas" : "Instalar Giro Bebidas";
@@ -73,6 +84,7 @@ public sealed class InstallerWindow : Window
         body.Children.Add(new TextBlock { Text = "Pasta do aplicativo", FontWeight = FontWeights.SemiBold, FontSize = 12, Margin = new Thickness(0, 0, 0, 7) });
         string defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "GiroBebidas");
         if (uninstall && File.Exists(Path.Combine(AppContext.BaseDirectory, Installation.ManifestName))) defaultPath = AppContext.BaseDirectory;
+        if (!uninstall && updateDirectory is not null) defaultPath = updateDirectory;
         var folderRow = new DockPanel(); var browse = Button("Escolher", false); browse.Margin = new Thickness(10, 0, 0, 0); DockPanel.SetDock(browse, Dock.Right); folderRow.Children.Add(browse);
         target = new TextBox { Text = defaultPath, Padding = new Thickness(10, 10, 10, 10), BorderBrush = Brush("#D8E4D2"), Background = Brushes.White }; folderRow.Children.Add(target); body.Children.Add(folderRow);
         browse.Click += (_, _) => { var pick = new OpenFolderDialog { Title = "Escolher pasta do Giro Bebidas", InitialDirectory = Directory.Exists(target.Text) ? target.Text : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) }; if (pick.ShowDialog(this) == true) target.Text = uninstall ? pick.FolderName : Path.Combine(pick.FolderName, "GiroBebidas"); };

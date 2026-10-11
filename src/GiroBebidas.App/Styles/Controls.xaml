@@ -1,0 +1,252 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Controles arredondados com foco, seleção e rolagem do Giro Bebidas. -->
+  <SolidColorBrush x:Key="PreviewInputInk" Color="#172B29" />
+  <SolidColorBrush x:Key="PreviewInputGreen" Color="#187B52" />
+  <SolidColorBrush x:Key="PreviewInputBorder" Color="#D9E4DD" />
+
+  <Style x:Key="PreviewScrollPageButton" TargetType="RepeatButton">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RepeatButton">
+          <Border Background="{TemplateBinding Background}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="PreviewScrollThumb" TargetType="Thumb">
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="MinWidth" Value="6" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Border x:Name="ThumbBody" Background="{TemplateBinding Background}"
+                  CornerRadius="4" Margin="3,2" Opacity="0.75" />
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="ThumbBody" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsDragging" Value="True">
+              <Setter TargetName="ThumbBody" Property="Background" Value="#187B52" />
+              <Setter TargetName="ThumbBody" Property="Opacity" Value="1" />
+            </Trigger>
+            <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type ScrollBar}}}" Value="Horizontal">
+              <Setter TargetName="ThumbBody" Property="Margin" Value="2,3" />
+              <Setter Property="MinHeight" Value="6" />
+              <Setter Property="MinWidth" Value="28" />
+            </DataTrigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="ScrollBar">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#AFC4B8" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ScrollBar">
+          <Grid Background="{TemplateBinding Background}">
+            <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}"
+                   Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                   ViewportSize="{TemplateBinding ViewportSize}" IsDirectionReversed="True"
+                   Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+              <Track.DecreaseRepeatButton>
+                <RepeatButton x:Name="PageBefore" Command="ScrollBar.PageUpCommand"
+                              Style="{StaticResource PreviewScrollPageButton}" />
+              </Track.DecreaseRepeatButton>
+              <Track.Thumb>
+                <Thumb Background="{TemplateBinding Foreground}"
+                       Style="{StaticResource PreviewScrollThumb}" />
+              </Track.Thumb>
+              <Track.IncreaseRepeatButton>
+                <RepeatButton x:Name="PageAfter" Command="ScrollBar.PageDownCommand"
+                              Style="{StaticResource PreviewScrollPageButton}" />
+              </Track.IncreaseRepeatButton>
+            </Track>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+              <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
+              <Setter TargetName="PageBefore" Property="Command" Value="ScrollBar.PageLeftCommand" />
+              <Setter TargetName="PageAfter" Property="Command" Value="ScrollBar.PageRightCommand" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="Height" Value="12" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="DarkScrollBar" TargetType="ScrollBar" BasedOn="{StaticResource {x:Type ScrollBar}}">
+    <Setter Property="Foreground" Value="#759F8C" />
+    <Setter Property="Background" Value="#112D25" />
+  </Style>
+
+  <Style TargetType="ComboBoxItem">
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="Margin" Value="3,1" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Foreground" Value="{StaticResource PreviewInputInk}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ComboBoxItem">
+          <Border x:Name="ItemBody" Background="{TemplateBinding Background}" CornerRadius="6"
+                  Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+              <Setter TargetName="ItemBody" Property="Background" Value="#EFF6F1" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter TargetName="ItemBody" Property="Background" Value="#DFF0E5" />
+              <Setter Property="Foreground" Value="#126342" />
+              <Setter Property="FontWeight" Value="SemiBold" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="ItemBody" Property="Opacity" Value="0.45" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="PreviewComboEditor" TargetType="TextBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="SelectionBrush" Value="#BCE4CB" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TextBox">
+          <ScrollViewer x:Name="PART_ContentHost" Focusable="False" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="ComboBox">
+    <Setter Property="Foreground" Value="{StaticResource PreviewInputInk}" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{StaticResource PreviewInputBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ComboBox">
+          <Grid x:Name="Root" SnapsToDevicePixels="True">
+            <Border x:Name="InputBorder" CornerRadius="9" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="34" />
+              </Grid.ColumnDefinitions>
+              <ToggleButton x:Name="DropDownToggle" Grid.ColumnSpan="2" Focusable="False"
+                            IsTabStop="False" ClickMode="Press"
+                            IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent">
+                      <Path Width="9" Height="5" Margin="0,0,13,0" HorizontalAlignment="Right"
+                            VerticalAlignment="Center" Data="M 0,0 L 4.5,4.5 L 9,0"
+                            Stroke="#5F7C6F" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                            StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Border>
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <ContentPresenter x:Name="SelectionPresenter" Grid.Column="0"
+                                IsHitTestVisible="False" Margin="{TemplateBinding Padding}"
+                                Content="{TemplateBinding SelectionBoxItem}"
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+              <TextBox x:Name="PART_EditableTextBox" Grid.Column="0" Visibility="Collapsed"
+                       Margin="{TemplateBinding Padding}" Style="{StaticResource PreviewComboEditor}"
+                       Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}"
+                       FontSize="{TemplateBinding FontSize}" IsReadOnly="{TemplateBinding IsReadOnly}" />
+            </Grid>
+            <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                   PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                   AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+              <Border x:Name="DropDownBody" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                      MaxHeight="{TemplateBinding MaxDropDownHeight}" Margin="0,6,0,6" Padding="4"
+                      Background="White" BorderBrush="#D9E4DD" BorderThickness="1" CornerRadius="9">
+                <Border.Effect>
+                  <DropShadowEffect Color="#112D25" BlurRadius="12" ShadowDepth="3" Opacity="0.12" />
+                </Border.Effect>
+                <ScrollViewer Focusable="False" CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                              HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                              VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                  <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"
+                                  KeyboardNavigation.TabNavigation="Cycle" />
+                </ScrollViewer>
+              </Border>
+            </Popup>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="InputBorder" Property="BorderBrush" Value="#90B69E" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+              <Setter TargetName="InputBorder" Property="BorderBrush" Value="#187B52" />
+            </Trigger>
+            <Trigger Property="IsDropDownOpen" Value="True">
+              <Setter TargetName="InputBorder" Property="BorderBrush" Value="#187B52" />
+            </Trigger>
+            <Trigger Property="IsEditable" Value="True">
+              <Setter Property="IsTabStop" Value="False" />
+              <Setter TargetName="SelectionPresenter" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+              <Setter TargetName="DropDownToggle" Property="Grid.Column" Value="1" />
+              <Setter TargetName="DropDownToggle" Property="Grid.ColumnSpan" Value="1" />
+            </Trigger>
+            <Trigger Property="HasItems" Value="False">
+              <Setter TargetName="DropDownBody" Property="MinHeight" Value="40" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="Root" Property="Opacity" Value="0.48" />
+            </Trigger>
+            <Trigger Property="Validation.HasError" Value="True">
+              <Setter TargetName="InputBorder" Property="BorderBrush" Value="#B4483E" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

@@ -16,12 +16,13 @@ public partial class MainWindow : Window
     public MainViewModel Vm { get; }
     private readonly DispatcherTimer messageTimer = new() { Interval = TimeSpan.FromSeconds(9) };
     public bool ReturnToLogin { get; private set; }
-    public MainWindow(StoreService service)
+    public MainWindow(StoreService service, bool checkUpdatesOnStartup = true)
     {
         InitializeComponent(); Vm = new(service); DataContext = Vm;
         Vm.Notify = Notify; Vm.RequestWeight = AddWeighed;
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
-        Loaded += (_, _) => ProductSearch.Focus();
+        Loaded += async (_, _) => { ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
+        Closed += (_, _) => UpdatesConfigurationPanel.CloseOperations();
         Closing += Window_Closing;
     }
     private void Notify(string message) { Vm.Message = message; messageTimer.Stop(); messageTimer.Start(); }

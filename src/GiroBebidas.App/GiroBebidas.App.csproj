@@ -3,6 +3,8 @@
     <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF>
     <AssemblyName>GiroBebidas</AssemblyName><RootNamespace>GiroBebidas.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\giro-bebidas-icon-v1.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="..\GiroBebidas.Core\GiroBebidas.Core.csproj" /></ItemGroup>
+  <ItemGroup><Resource Include="Assets\giro-bebidas-icon-v1.ico"/><Resource Include="Assets\giro-bebidas-icon-v1.png"/></ItemGroup>
 </Project>

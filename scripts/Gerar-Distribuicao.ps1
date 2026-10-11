@@ -43,4 +43,5 @@ if ([System.IO.File]::Exists($taskPortableZip)) { [System.IO.File]::Delete($task
 $taskFiles = Get-ChildItem -LiteralPath $taskRelease -File | Where-Object { $_.Extension -in '.exe', '.zip' }
 $taskHashes = foreach ($taskFile in $taskFiles) { $taskHash = Get-FileHash -LiteralPath $taskFile.FullName -Algorithm SHA256; $taskHash.Hash + '  ' + $taskFile.Name }
 [System.IO.File]::WriteAllLines((Join-Path $taskRelease 'SHA256.txt'), [string[]]$taskHashes)
+[System.IO.File]::Copy((Join-Path $taskRelease 'InstalarGiroBebidas.exe'), (Join-Path $taskRoot 'InstalarGiroBebidas.exe'), $true)
 Write-Output ('Distribuição concluída: ' + $taskRelease)

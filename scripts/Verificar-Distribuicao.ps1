@@ -1,6 +1,7 @@
-param([string]$Versao = '1.0.0')
+param([string]$Versao = '')
 $ErrorActionPreference = 'Stop'
 $taskRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
+if ([string]::IsNullOrWhiteSpace($Versao)) { $Versao = ([xml][System.IO.File]::ReadAllText((Join-Path $taskRoot 'Directory.Build.props'))).Project.PropertyGroup.Version }
 Set-Location -LiteralPath $taskRoot
 $taskRelease = [System.IO.Path]::GetFullPath((Join-Path $taskRoot ('artifacts\distribuicao\' + $Versao)))
 if (-not $taskRelease.StartsWith($taskRoot.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Destino inválido.' }

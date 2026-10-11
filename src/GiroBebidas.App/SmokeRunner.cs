@@ -17,7 +17,7 @@ public static class SmokeRunner
         if (!service.Snapshot.Customers.Any()) service.SaveCustomer(new() { Name = "Marina Souza", Phone = "(11) 99999-0000", Address = "Rua dos Ipês, 85 • Centro", CreditLimit = 500 });
         if (!service.Snapshot.CashSessions.Any()) service.OpenCash(250);
         if (service.Snapshot.Users.Count == 1) service.SaveUser(new() { Name = "João • balcão", Username = "JOAO", Role = UserRole.Operador }, "1234");
-        var window = new MainWindow(service); var vm = window.Vm;
+        var window = new MainWindow(service, false); var vm = window.Vm;
         vm.AddProduct(vm.Snapshot.Products[0], 12); vm.AddProduct(vm.Snapshot.Products[4], 2); vm.AddProduct(vm.Snapshot.Products[12], 1);
         vm.CartCustomer = vm.CustomerOptions.Last(); vm.Discount = 2;
         if (!service.Snapshot.Orders.Any()) service.CreateOrder([new(vm.Snapshot.Products[2].Id, 6)], service.Snapshot.Customers[0].Id, true, "Rua dos Ipês, 85 • Centro", "Entregar após 18h", 0, 5);
@@ -48,7 +48,12 @@ public static class SmokeRunner
         Capture(fiscalForm, Path.Combine(output, "18-parametros-nfce.png")); fiscalForm.Close();
         if (service.Snapshot.Fiscal.Options.Environment != FiscalEnvironment.Homologacao || vm.FiscalChecks.Single(c => c.Item == "Autorização SEFAZ").Complete)
             throw new InvalidOperationException("A configuração inicial não pode simular emissão fiscal autorizada.");
+        vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "21-atualizacoes.png"));
         window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
+        if (window.CartItemsViewport.ActualHeight < 230) throw new InvalidOperationException("O carrinho precisa manter espaço suficiente para os produtos na tela menor.");
+        MainWindow.ScrollMenu(window.MenuScroll, -20, 3); window.UpdateLayout();
+        if (window.MenuScroll.ScrollableHeight > 0 && window.MenuScroll.VerticalOffset <= 0) throw new InvalidOperationException("A rolagem fracionária do menu não respondeu ao gesto do touchpad.");
+        MainWindow.ScrollMenu(window.MenuScroll, 120, 3); window.UpdateLayout();
         vm.ClearCart(); window.Close();
         File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida e exportada no backup. Layout menor renderizado.\n");
     }

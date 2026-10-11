@@ -373,6 +373,7 @@ public sealed partial class StoreService(JsonStore store)
         Store.Update(s =>
         {
             var actor = Actor(s, true); settings.Name = Required(settings.Name, "o nome do depósito", 80);
+            settings.GitHubUpdates = ValidateUpdateSettings(settings.GitHubUpdates);
             if (settings.DefaultPrinterId is not null && !s.Printers.Any(p => p.Id == settings.DefaultPrinterId)) settings.DefaultPrinterId = null;
             if (settings.DefaultScaleId is not null && !s.Scales.Any(p => p.Id == settings.DefaultScaleId)) settings.DefaultScaleId = null;
             s.Settings = settings; Log(s, actor, "Configurações atualizadas"); return 0;

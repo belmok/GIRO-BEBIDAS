@@ -5,3 +5,5 @@ artifacts/
 *.user
 *.suo
 .vs/
+/InstalarGiroBebidas.exe
+*_wpftmp.csproj
