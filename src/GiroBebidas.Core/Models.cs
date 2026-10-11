@@ -33,6 +33,7 @@ public class StoreSettings
     public string Document { get; set; } = "";
     public string ReceiptFooter { get; set; } = "Obrigado pela preferência. Volte sempre!";
     public bool AutoPrint { get; set; }
+    public bool DailyBackup { get; set; } = true;
     public Guid? DefaultPrinterId { get; set; }
     public Guid? DefaultScaleId { get; set; }
 }
@@ -58,6 +59,8 @@ public class Product
     public string Code { get; set; } = "";
     public string Barcode { get; set; } = "";
     public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string PhotoBase64 { get; set; } = "";
     public string Category { get; set; } = "Cervejas";
     public string Unit { get; set; } = "un";
     public decimal Price { get; set; }

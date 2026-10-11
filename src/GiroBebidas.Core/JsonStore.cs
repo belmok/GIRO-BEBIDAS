@@ -56,6 +56,12 @@ public sealed class JsonStore
         string temp = FilePath + ".tmp";
         try
         {
+            if (next.Settings.DailyBackup && File.Exists(FilePath))
+            {
+                string backups = Path.Combine(DirectoryPath, "Backups"); Directory.CreateDirectory(backups);
+                string daily = Path.Combine(backups, $"giro-{DateTime.Now:yyyy-MM-dd}.json");
+                if (!File.Exists(daily)) File.Copy(FilePath, daily);
+            }
             byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(next, JsonOptions);
             using (FileStream stream = new(temp, FileMode.Create, FileAccess.Write, FileShare.None)) { stream.Write(bytes); stream.Flush(true); }
             if (File.Exists(FilePath)) File.Replace(temp, FilePath, FilePath + ".bak", true);

@@ -105,6 +105,9 @@ public sealed class StoreService(JsonStore store)
         {
             var actor = Actor(s, true);
             input.Name = Required(input.Name, "o nome do produto", 100);
+            if (input.Description.Length > 2000) throw new InvalidOperationException("Use até 2000 caracteres na descrição.");
+            if (input.PhotoBase64.Length > 2_000_000) throw new InvalidOperationException("A foto está muito grande.");
+            if (input.PhotoBase64.Length > 0) { try { _ = Convert.FromBase64String(input.PhotoBase64); } catch (FormatException) { throw new InvalidOperationException("Foto inválida."); } }
             input.Code = Required(input.Code, "o código", 30);
             input.Barcode = input.Barcode.Trim();
             input.Category = Required(input.Category, "a categoria", 40);
@@ -165,6 +168,7 @@ public sealed class StoreService(JsonStore store)
     private static List<SaleLine> MakeLines(StoreState s, IReadOnlyList<DraftItem> items, Guid? orderId = null)
     {
         if (items.Count == 0) throw new InvalidOperationException("Adicione produtos à venda.");
+        foreach (var item in items) Quantity(item.Quantity, s.Products.FirstOrDefault(p => p.Id == item.ProductId) ?? throw new InvalidOperationException("Produto não encontrado."));
         List<SaleLine> lines = [];
         foreach (var item in items.GroupBy(i => i.ProductId).Select(g => new DraftItem(g.Key, g.Sum(x => x.Quantity))))
         {

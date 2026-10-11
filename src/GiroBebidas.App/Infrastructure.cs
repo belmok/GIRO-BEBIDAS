@@ -43,7 +43,7 @@ public class ProductTile
     public string Wholesale => Product.WholesaleMinimum > 0 ? $"{Product.WholesalePrice:C2} a partir de {Product.WholesaleMinimum:0.###} {Product.Unit}" : "Preço de varejo";
     public Brush StockBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(Available <= Product.MinimumStock ? "#B37725" : "#6C8274"));
     public ImageSource Image { get; }
-    public ProductTile(Product product, decimal available) { Product = product; Available = available; Image = BeverageArt.Create(product); }
+    public ProductTile(Product product, decimal available) { Product = product; Available = available; Image = PhotoTools.Decode(product.PhotoBase64) ?? BeverageArt.Create(product); }
 }
 public sealed class CartLine(Product product, decimal quantity, decimal? fixedPrice = null) : Observable
 {

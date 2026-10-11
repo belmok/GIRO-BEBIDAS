@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><AssemblyName>InstalarGiroBebidas</AssemblyName><RootNamespace>GiroBebidas.Setup</RootNamespace></PropertyGroup>
+ <ItemGroup><ProjectReference Include="..\GiroBebidas.Core\GiroBebidas.Core.csproj"/><EmbeddedResource Include="$(PayloadPath)" LogicalName="GiroBebidas.Payload.zip" Condition="'$(PayloadPath)' != ''" /></ItemGroup>
+</Project>
