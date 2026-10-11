@@ -12,7 +12,7 @@ public partial class UpdatesPanel : UserControl
     private readonly CancellationTokenSource lifetime = new();
     private CancellationTokenSource? operation;
     private GitHubReleaseUpdate? release;
-    private bool initialized, busy, closed;
+    private bool initialized, busy, closed, repositoryHidden;
     private MainViewModel Vm => (MainViewModel)DataContext;
     private MainWindow Main => (MainWindow)Window.GetWindow(this);
     private static Version CurrentVersion => typeof(StoreService).Assembly.GetName().Version!;
@@ -45,8 +45,28 @@ public partial class UpdatesPanel : UserControl
     }
     private void Repository_Changed(object sender, TextChangedEventArgs e)
     {
+        UpdateRepositoryVisibility();
         if (!initialized) return;
         release = null; InstallButton.IsEnabled = false; ReleaseLabel.Text = ""; NotesLabel.Text = "";
+    }
+    private void ToggleRepositoryVisibility_Click(object sender, RoutedEventArgs e)
+    {
+        if (busy) return;
+        repositoryHidden = !repositoryHidden;
+        UpdateRepositoryVisibility();
+        if (!repositoryHidden) { RepositoryBox.Focus(); RepositoryBox.CaretIndex = RepositoryBox.Text.Length; }
+    }
+    private void UpdateRepositoryVisibility()
+    {
+        if (RepositoryMask is null || RepositoryVisibilityButton is null) return;
+        RepositoryBox.Visibility = repositoryHidden ? Visibility.Hidden : Visibility.Visible;
+        RepositoryMask.Visibility = repositoryHidden ? Visibility.Visible : Visibility.Collapsed;
+        RepositoryMask.Text = string.IsNullOrWhiteSpace(RepositoryBox.Text) ? "Nenhum repositório configurado" : "•••••••• / ••••••••••";
+        RepositoryVisibilityIcon.Text = repositoryHidden ? "\uED1A" : "\uE890";
+        RepositoryVisibilityLabel.Text = repositoryHidden ? "Mostrar" : "Ocultar";
+        string action = repositoryHidden ? "Mostrar endereço do repositório" : "Ocultar endereço do repositório";
+        RepositoryVisibilityButton.ToolTip = action;
+        System.Windows.Automation.AutomationProperties.SetName(RepositoryVisibilityButton, action);
     }
     public async Task CheckOnStartupAsync()
     {
@@ -61,7 +81,7 @@ public partial class UpdatesPanel : UserControl
     }
     private void SetBusy(bool value, bool download = false)
     {
-        busy = value; SaveButton.IsEnabled = CheckButton.IsEnabled = RepositoryBox.IsEnabled = AutoCheckBox.IsEnabled = !value;
+        busy = value; SaveButton.IsEnabled = CheckButton.IsEnabled = RepositoryBox.IsEnabled = AutoCheckBox.IsEnabled = RepositoryVisibilityButton.IsEnabled = !value;
         InstallButton.IsEnabled = !value && release is not null;
         CancelButton.Visibility = value && download ? Visibility.Visible : Visibility.Collapsed;
         DownloadProgress.Visibility = value && download ? Visibility.Visible : Visibility.Collapsed;

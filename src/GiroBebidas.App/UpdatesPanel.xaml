@@ -1,32 +1,161 @@
-<UserControl x:Class="GiroBebidas.App.UpdatesPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Loaded="Panel_Loaded">
- <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-  <StackPanel MaxWidth="920" HorizontalAlignment="Left" Margin="0,0,10,8">
-   <Border Style="{StaticResource Card}"><StackPanel>
-    <TextBlock Text="Atualizações do Giro Bebidas" Style="{StaticResource SectionTitle}"/>
-    <TextBlock x:Name="CurrentVersionLabel" Foreground="#187B52" FontWeight="SemiBold" Margin="0,8,0,16"/>
-    <TextBlock Text="Receba novas versões publicadas no GitHub. A consulta pode ser automática; a instalação começa quando você escolher atualizar." TextWrapping="Wrap" Style="{StaticResource MutedText}"/>
-    <TextBlock Text="Repositório público" FontSize="12" Margin="0,22,0,6"/>
-    <TextBox x:Name="RepositoryBox" MaxLength="220" TextChanged="Repository_Changed"/>
-    <TextBlock Text="Aceita usuário/projeto ou o link do repositório no GitHub." FontSize="12" Foreground="#64776D" Margin="0,7,0,14"/>
-    <CheckBox x:Name="AutoCheckBox" Content="Consultar atualizações ao entrar como administrador"/>
-    <WrapPanel Margin="0,20,0,0">
-     <Button x:Name="SaveButton" Content="Salvar configuração" Click="Save_Click" Margin="0,0,10,8"/>
-     <Button x:Name="CheckButton" Content="Verificar atualizações" Style="{StaticResource PrimaryButton}" Click="Check_Click" Margin="0,0,10,8"/>
-     <Button Content="Abrir publicações" Click="OpenReleases_Click" Margin="0,0,0,8"/>
-    </WrapPanel>
-   </StackPanel></Border>
-   <Border Style="{StaticResource Card}" Margin="0,18,0,0"><StackPanel>
-    <TextBlock Text="Disponibilidade" Style="{StaticResource SectionTitle}"/>
-    <TextBlock x:Name="StatusLabel" Text="Consulte as publicações para encontrar uma versão mais recente." TextWrapping="Wrap" Margin="0,12,0,12" Foreground="#36543D"/>
-    <TextBlock x:Name="ReleaseLabel" FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap"/>
-    <TextBlock x:Name="NotesLabel" TextWrapping="Wrap" Foreground="#64776D" Margin="0,10,0,12"/>
-    <ProgressBar x:Name="DownloadProgress" Height="8" Minimum="0" Maximum="100" Foreground="#187B52" Visibility="Collapsed" Margin="0,5,0,16"/>
-    <WrapPanel>
-     <Button x:Name="InstallButton" Content="Baixar e instalar atualização" Style="{StaticResource PrimaryButton}" Click="Install_Click" IsEnabled="False" Margin="0,0,10,8"/>
-     <Button x:Name="CancelButton" Content="Cancelar download" Click="Cancel_Click" Visibility="Collapsed" Margin="0,0,0,8"/>
-    </WrapPanel>
-    <TextBlock Text="Antes de instalar, feche o caixa e finalize a venda atual. O sistema cria um backup, encerra o PDV e abre o instalador na pasta existente." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,16,0,0"/>
-   </StackPanel></Border>
+<UserControl x:Class="GiroBebidas.App.UpdatesPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="Panel_Loaded"
+             AutomationProperties.Name="Atualizações do Giro Bebidas">
+ <UserControl.Resources>
+  <Style x:Key="UpdateIcon" TargetType="TextBlock">
+   <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+   <Setter Property="FontSize" Value="19"/>
+   <Setter Property="Foreground" Value="#187B52"/>
+   <Setter Property="VerticalAlignment" Value="Center"/>
+   <Setter Property="TextWrapping" Value="NoWrap"/>
+   <Setter Property="IsHitTestVisible" Value="False"/>
+  </Style>
+  <Style x:Key="UpdateButtonIcon" TargetType="TextBlock" BasedOn="{StaticResource UpdateIcon}">
+   <Setter Property="FontSize" Value="16"/>
+   <Setter Property="Margin" Value="0,0,9,0"/>
+   <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+  </Style>
+  <Style x:Key="UpdateProgress" TargetType="ProgressBar">
+   <Setter Property="Background" Value="#E6EFE9"/>
+   <Setter Property="Foreground" Value="#187B52"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ProgressBar">
+    <Grid><Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="4"/>
+     <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="4" HorizontalAlignment="Left"/>
+    </Grid>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+ </UserControl.Resources>
+ <ScrollViewer x:Name="UpdatesScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+               AutomationProperties.Name="Configuração e disponibilidade de atualizações">
+  <StackPanel MaxWidth="920" HorizontalAlignment="Stretch" Margin="0,0,10,8">
+   <Border Style="{StaticResource Card}" CornerRadius="16" BorderBrush="#E0E9E3" Padding="24,22">
+    <StackPanel>
+     <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Width="48" Height="48" Background="#E8F4EC" CornerRadius="12" VerticalAlignment="Top" Margin="0,2,16,0">
+       <TextBlock Text="&#xE895;" Style="{StaticResource UpdateIcon}" FontSize="25" HorizontalAlignment="Center"/>
+      </Border>
+      <StackPanel Grid.Column="1">
+       <TextBlock Text="Atualizações do Giro Bebidas" FontSize="25" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <Border Background="#EBF5EE" CornerRadius="6" Padding="9,5" HorizontalAlignment="Left" Margin="0,9,0,0">
+        <TextBlock x:Name="CurrentVersionLabel" Foreground="#187B52" FontSize="12" FontWeight="SemiBold"
+                   AutomationProperties.Name="Versão instalada"/>
+       </Border>
+      </StackPanel>
+     </Grid>
+     <TextBlock Text="Receba as novas versões publicadas no GitHub. Consulte quando quiser e escolha o momento de instalar."
+                TextWrapping="Wrap" FontSize="12" Foreground="#64776D" Margin="0,15,0,0"/>
+     <Grid Margin="0,20,0,7">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock Text="Repositório público" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+      <TextBlock Grid.Column="1" Text="GitHub" FontSize="11" Foreground="#778B7E" VerticalAlignment="Center"/>
+     </Grid>
+     <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <Border Background="White" BorderThickness="1" CornerRadius="9">
+       <Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="#DCE7DF"/><Style.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="#187B52"/></Trigger></Style.Triggers></Style></Border.Style>
+       <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <TextBlock Text="&#xE943;" Style="{StaticResource UpdateIcon}" FontSize="20" HorizontalAlignment="Center"
+                   ToolTip="Repositório do GitHub"/>
+        <TextBox x:Name="RepositoryBox" Grid.Column="1" MaxLength="220" TextChanged="Repository_Changed"
+                 Tag="usuario/projeto" BorderThickness="0" Background="Transparent" Padding="0,0,12,0"
+                 Height="44" MinHeight="43" VerticalContentAlignment="Center"
+                 AutomationProperties.Name="Repositório público no GitHub"
+                 ToolTip="Informe usuário/projeto ou o endereço público do repositório no GitHub.">
+         <TextBox.Template><ControlTemplate TargetType="TextBox">
+          <Grid>
+           <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+           <TextBlock x:Name="RepositoryPlaceholder" Text="usuario/projeto" Foreground="#9CA999" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+          </Grid>
+          <ControlTemplate.Triggers><Trigger Property="Text" Value=""><Setter TargetName="RepositoryPlaceholder" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>
+         </ControlTemplate></TextBox.Template>
+        </TextBox>
+        <TextBlock x:Name="RepositoryMask" Grid.Column="1" Text="Repositório oculto" Visibility="Collapsed"
+                   Foreground="#74877B" FontSize="13" Margin="0,0,12,0" VerticalAlignment="Center"
+                   IsHitTestVisible="False" AutomationProperties.Name="Repositório oculto na tela"/>
+       </Grid>
+      </Border>
+      <Button x:Name="RepositoryVisibilityButton" Grid.Column="1" Click="ToggleRepositoryVisibility_Click"
+              Margin="9,0,0,0" Padding="12,9" MinHeight="44" VerticalAlignment="Top"
+              AutomationProperties.Name="Mostrar ou ocultar o repositório"
+              ToolTip="Oculta ou mostra o endereço na tela. O repositório configurado continua salvo.">
+       <StackPanel Orientation="Horizontal">
+        <TextBlock x:Name="RepositoryVisibilityIcon" Text="&#xED1A;" Style="{StaticResource UpdateButtonIcon}"/>
+        <TextBlock x:Name="RepositoryVisibilityLabel" Text="Ocultar" VerticalAlignment="Center"/>
+       </StackPanel>
+      </Button>
+     </Grid>
+     <TextBlock Text="Use usuário/projeto ou o link público do GitHub." FontSize="11" Foreground="#778B7E" Margin="0,7,0,10"/>
+     <CheckBox x:Name="AutoCheckBox" Content="Consultar atualizações ao entrar como administrador"
+               AutomationProperties.Name="Consulta automática de atualizações ao entrar como administrador"
+               ToolTip="Consulta as publicações ao entrar como administrador. A instalação continua sendo sua escolha."/>
+     <WrapPanel Margin="0,16,0,0">
+      <Button x:Name="SaveButton" Click="Save_Click" Margin="0,0,10,8"
+              AutomationProperties.Name="Salvar configuração de atualizações"
+              ToolTip="Salva o repositório e a opção de consulta automática.">
+       <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE74E;" Style="{StaticResource UpdateButtonIcon}"/><TextBlock Text="Salvar configuração" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+      <Button x:Name="CheckButton" Style="{StaticResource PrimaryButton}" Click="Check_Click" Margin="0,0,10,8"
+              AutomationProperties.Name="Verificar atualizações"
+              ToolTip="Consulta o GitHub para procurar uma versão mais recente do Giro Bebidas.">
+       <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE895;" Style="{StaticResource UpdateButtonIcon}"/><TextBlock Text="Verificar atualizações" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+      <Button Click="OpenReleases_Click" Margin="0,0,0,8"
+              AutomationProperties.Name="Abrir publicações do repositório"
+              ToolTip="Abre as versões publicadas no GitHub em seu navegador.">
+       <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A7;" Style="{StaticResource UpdateButtonIcon}"/><TextBlock Text="Abrir publicações" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+     </WrapPanel>
+    </StackPanel>
+   </Border>
+   <Border Style="{StaticResource Card}" CornerRadius="16" BorderBrush="#E0E9E3" Padding="24,22" Margin="0,18,0,0">
+    <StackPanel>
+     <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Width="40" Height="40" Background="#E8F4EC" CornerRadius="11" Margin="0,0,13,0" VerticalAlignment="Top">
+       <TextBlock Text="&#xE753;" Style="{StaticResource UpdateIcon}" FontSize="22" HorizontalAlignment="Center"/>
+      </Border>
+      <StackPanel Grid.Column="1">
+       <TextBlock Text="Disponibilidade" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <TextBlock x:Name="StatusLabel" Text="Consulte as publicações para encontrar uma versão mais recente."
+                  TextWrapping="Wrap" FontSize="12" Foreground="#47674F" Margin="0,5,0,0"
+                  AutomationProperties.Name="Status da atualização" AutomationProperties.LiveSetting="Polite"/>
+      </StackPanel>
+     </Grid>
+     <TextBlock x:Name="ReleaseLabel" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"
+                Foreground="#187B52" Margin="0,16,0,0" AutomationProperties.Name="Versão disponível">
+      <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger></Style.Triggers></Style></TextBlock.Style>
+     </TextBlock>
+     <TextBlock x:Name="NotesLabel" TextWrapping="Wrap" Foreground="#64776D" FontSize="12" Margin="0,10,0,0"
+                AutomationProperties.Name="Novidades da versão">
+      <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger></Style.Triggers></Style></TextBlock.Style>
+     </TextBlock>
+     <ProgressBar x:Name="DownloadProgress" Style="{StaticResource UpdateProgress}" Height="8" Minimum="0" Maximum="100"
+                  Visibility="Collapsed" Margin="0,17,0,0" AutomationProperties.Name="Progresso do download"/>
+     <WrapPanel Margin="0,18,0,0">
+      <Button x:Name="InstallButton" Style="{StaticResource PrimaryButton}" Click="Install_Click" IsEnabled="False" Margin="0,0,10,8"
+              AutomationProperties.Name="Baixar e instalar atualização"
+              ToolTip="Baixa o instalador, confere sua integridade e cria um backup antes de abrir a instalação.">
+       <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE896;" Style="{StaticResource UpdateButtonIcon}"/><TextBlock Text="Baixar e instalar atualização" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+      <Button x:Name="CancelButton" Click="Cancel_Click" Visibility="Collapsed" Margin="0,0,0,8"
+              AutomationProperties.Name="Cancelar download da atualização"
+              ToolTip="Interrompe o download atual. Você pode tentar novamente depois.">
+       <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE711;" Style="{StaticResource UpdateButtonIcon}"/><TextBlock Text="Cancelar download" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+     </WrapPanel>
+     <Border Background="#F3F7F4" CornerRadius="9" Padding="12,11" Margin="0,10,0,0">
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <TextBlock Text="&#xE72E;" Style="{StaticResource UpdateIcon}" FontSize="16" VerticalAlignment="Top" Margin="0,2,10,0"/>
+       <TextBlock Grid.Column="1" Text="Feche o caixa e finalize a venda antes de instalar. O Giro Bebidas cria um backup e abre o instalador na pasta existente."
+                  TextWrapping="Wrap" FontSize="11" Foreground="#64776D"/>
+      </Grid>
+     </Border>
+    </StackPanel>
+   </Border>
   </StackPanel>
  </ScrollViewer>
 </UserControl>

@@ -1,5 +1,8 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -49,13 +52,42 @@ public static class SmokeRunner
         if (service.Snapshot.Fiscal.Options.Environment != FiscalEnvironment.Homologacao || vm.FiscalChecks.Single(c => c.Item == "Autorização SEFAZ").Complete)
             throw new InvalidOperationException("A configuração inicial não pode simular emissão fiscal autorizada.");
         vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "21-atualizacoes.png"));
+        var updates = window.UpdatesConfigurationPanel;
+        string configuredRepository = updates.RepositoryBox.Text;
+        updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
+        if (updates.RepositoryBox.Visibility != Visibility.Hidden || updates.RepositoryMask.Visibility != Visibility.Visible || (!string.IsNullOrEmpty(configuredRepository) && updates.RepositoryMask.Text.Contains(configuredRepository, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("O endereço do repositório precisa ficar oculto na tela.");
+        Capture(window, Path.Combine(output, "22-atualizacoes-repositorio-oculto.png"));
+        updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
+        if (updates.RepositoryBox.Visibility != Visibility.Visible || updates.RepositoryBox.Text != configuredRepository)
+            throw new InvalidOperationException("Mostrar o repositório deve preservar o endereço configurado.");
+        bool automaticCheck = updates.AutoCheckBox.IsChecked == true;
+        var togglePeer = new CheckBoxAutomationPeer(updates.AutoCheckBox);
+        var toggleProvider = (IToggleProvider)togglePeer.GetPattern(PatternInterface.Toggle);
+        toggleProvider.Toggle();
+        if (updates.AutoCheckBox.IsChecked == automaticCheck) throw new InvalidOperationException("O interruptor de atualizações não alternou a opção.");
+        toggleProvider.Toggle();
+        if (updates.AutoCheckBox.IsChecked != automaticCheck) throw new InvalidOperationException("O interruptor não preservou a configuração ao retornar ao estado inicial.");
         window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
         if (window.CartItemsViewport.ActualHeight < 230) throw new InvalidOperationException("O carrinho precisa manter espaço suficiente para os produtos na tela menor.");
         MainWindow.ScrollMenu(window.MenuScroll, -20, 3); window.UpdateLayout();
         if (window.MenuScroll.ScrollableHeight > 0 && window.MenuScroll.VerticalOffset <= 0) throw new InvalidOperationException("A rolagem fracionária do menu não respondeu ao gesto do touchpad.");
         MainWindow.ScrollMenu(window.MenuScroll, 120, 3); window.UpdateLayout();
+        vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "23-atualizacoes-tela-menor.png"));
+        updates.UpdatesScroll.ScrollToEnd(); window.UpdateLayout();
+        var installPosition = updates.InstallButton.TranslatePoint(new Point(0, 0), updates.UpdatesScroll);
+        if (installPosition.X < 0 || installPosition.X + updates.InstallButton.ActualWidth > updates.UpdatesScroll.ActualWidth || installPosition.Y < 0 || installPosition.Y + updates.InstallButton.ActualHeight > updates.UpdatesScroll.ActualHeight)
+            throw new InvalidOperationException("O botão de atualização precisa ficar acessível na janela menor.");
+        updates.AutoCheckBox.IsChecked = false;
+        Capture(window, Path.Combine(output, "24-atualizacoes-interruptor-desativado.png"));
+        updates.AutoCheckBox.IsChecked = automaticCheck;
+        var switchSamples = new StackPanel { Margin = new Thickness(20) };
+        switchSamples.Children.Add(new CheckBox { Content = "Opção ativada", IsChecked = true });
+        switchSamples.Children.Add(new CheckBox { Content = "Opção desativada", IsChecked = false });
+        var switchWindow = new Window { Width = 370, Height = 210, Content = switchSamples, Background = Brushes.White };
+        Capture(switchWindow, Path.Combine(output, "25-interruptores.png")); switchWindow.Close();
         vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida e exportada no backup. Layout menor renderizado.\n");
+        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor.\n");
     }
     private static void Capture(Window window, string path)
     {

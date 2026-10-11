@@ -1,5 +1,15 @@
 # Controle de versões
 
+## 1.1.1 — 11/10/2026
+
+Painel de atualizações redesenhado com dois cartões, ícones verdes, versão instalada em destaque, ações organizadas e campo de repositório com opção de mostrar ou ocultar. O conteúdo se adapta à janela menor e permite rolagem.
+
+Opções do aplicativo usam interruptores: verde para ativado e cinza para desativado. Mantêm os vínculos de configuração, navegação por teclado e nomes acessíveis.
+
+A publicação no GitHub passa a conferir o rascunho pelo ID da Release, corrigindo a consulta que retornava 404 antes da publicação. Versões já publicadas continuam protegidas contra substituição.
+
+171 verificações automatizadas aprovadas. Painel renderizado em janela normal e de 1200 × 760, com confirmação de que mostrar/ocultar preserva o endereço, o interruptor alterna pela automação e o botão de instalação permanece acessível pela rolagem.
+
 ## 1.1.0 — 11/10/2026
 
 Atualizações por GitHub configuradas para `belmok/GIRO-BEBIDAS`, com consulta automática opcional, comparação de versões estáveis, download cancelável, limites e conferência SHA-256. A instalação exige caixa fechado e carrinho vazio, cria backup e abre o instalador na pasta existente. Workflow e script de publicação preparados; o envio ao repositório requer permissão de escrita.

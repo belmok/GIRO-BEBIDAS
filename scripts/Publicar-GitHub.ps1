@@ -50,7 +50,19 @@ if (-not $Publicar) {
 if (-not (Get-Command gh -ErrorAction SilentlyContinue) -or -not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Instale Git e GitHub CLI e entre na sua conta pelo GitHub CLI antes de publicar.' }
 function Invoke-GiroGh([string[]]$TaskArguments) {
     $taskResult = & gh @TaskArguments
-    if ($LASTEXITCODE -ne 0) { throw 'O GitHub CLI não concluiu a operação. Confira sua conta e as permissões no repositório.' }
+    $taskGhExitCode = $LASTEXITCODE
+    if ($taskGhExitCode -ne 0) {
+        # Log only public operation arguments; never include authentication, headers or file contents.
+        $taskGhOperation = 'gh'
+        if ($TaskArguments.Count -ge 2 -and $TaskArguments[0] -eq 'api') {
+            $taskGhOperation += ' api'
+            if ($TaskArguments[1] -match '^repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/releases/[0-9]+)?$') { $taskGhOperation += ' ' + $TaskArguments[1] }
+        }
+        elseif ($TaskArguments.Count -ge 2 -and $TaskArguments[0] -eq 'release' -and $TaskArguments[1] -in 'create', 'upload', 'view', 'edit') {
+            $taskGhOperation += ' release ' + $TaskArguments[1] + ' ' + $taskTag + ' --repo ' + $Repositorio
+        }
+        throw ('O GitHub CLI falhou (código ' + $taskGhExitCode + ') ao executar ' + $taskGhOperation + '. Confira sua conta e as permissões no repositório.')
+    }
     return $taskResult
 }
 $taskHead = (& git -C $taskRoot rev-parse HEAD).Trim()
@@ -94,8 +106,12 @@ if (-not $taskExisting) {
     finally { if ([IO.File]::Exists($taskNotesPath)) { Remove-Item -LiteralPath $taskNotesPath } }
 }
 Invoke-GiroGh -TaskArguments (@('release', 'upload', $taskTag, '--repo', $Repositorio, '--clobber') + @($taskFiles.FullName)) | Out-Null
-$taskReleaseInfo = (Invoke-GiroGh -TaskArguments @('api', ('repos/' + $Repositorio + '/releases/tags/' + $taskTag))) | ConvertFrom-Json
-if (-not $taskReleaseInfo.draft) { throw 'A publicação deixou de ser um rascunho antes da conferência. Interrompida.' }
+# The tag REST endpoint only returns published releases. The CLI also resolves drafts;
+# databaseId is the numeric REST ID, while the CLI's id field is a GraphQL node ID.
+$taskDraftRelease = (Invoke-GiroGh -TaskArguments @('release', 'view', $taskTag, '--repo', $Repositorio, '--json', 'databaseId,tagName,isDraft')) | ConvertFrom-Json
+if (-not $taskDraftRelease.isDraft -or $taskDraftRelease.tagName -cne $taskTag -or [string]$taskDraftRelease.databaseId -notmatch '^[1-9][0-9]*$') { throw 'Não foi possível identificar o rascunho correto para conferir os arquivos. Interrompida.' }
+$taskReleaseInfo = (Invoke-GiroGh -TaskArguments @('api', ('repos/' + $Repositorio + '/releases/' + $taskDraftRelease.databaseId))) | ConvertFrom-Json
+if (-not $taskReleaseInfo.draft -or $taskReleaseInfo.tag_name -cne $taskTag -or [string]$taskReleaseInfo.id -cne [string]$taskDraftRelease.databaseId) { throw 'A publicação deixou de ser o rascunho esperado antes da conferência. Interrompida.' }
 foreach ($taskFile in $taskFiles) {
     $taskAssets = @($taskReleaseInfo.assets | Where-Object { $_.name -ceq $taskFile.Name })
     if ($taskAssets.Count -ne 1 -or $taskAssets[0].state -ne 'uploaded' -or $taskAssets[0].size -ne $taskFile.Length) { throw ('Upload incompleto: ' + $taskFile.Name + '. O rascunho foi preservado.') }

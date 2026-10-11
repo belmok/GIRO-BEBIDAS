@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.1.0
+# Guia do Giro Bebidas — versão 1.1.1
 
 ## Instalação e primeiro acesso
 
@@ -81,7 +81,9 @@ Para recuperar, feche o caixa, limpe a venda atual e escolha **Restaurar backup*
 
 ## Atualizações do GitHub
 
-O administrador encontra **Atualizações** no menu. A versão 1.1.0 consulta por padrão o repositório público **belmok/GIRO-BEBIDAS** ao entrar. Você pode alterar o endereço ou desativar a consulta automática. A consulta não interrompe o atendimento nem instala arquivos automaticamente.
+O administrador encontra **Atualizações** no menu. O sistema consulta por padrão o repositório público **belmok/GIRO-BEBIDAS** ao entrar. Os cartões mostram a versão instalada, a configuração e a disponibilidade de novas versões. Use **Mostrar/Ocultar** para exibir ou esconder o endereço na tela. Você pode alterar o endereço ou desativar a consulta automática. A consulta não interrompe o atendimento nem instala arquivos automaticamente.
+
+As opções usam interruptores: **verde** significa ativado e **cinza** significa desativado. Clique no interruptor ou no texto ao lado; pelo teclado, use **Tab** para selecionar e **Espaço** para alternar. As mudanças de configuração continuam exigindo o botão **Salvar** da tela.
 
 Use **Verificar atualizações** para procurar uma versão estável mais recente. A publicação precisa conter `InstalarGiroBebidas.exe` e `SHA256.txt`. A tela mostra a versão e suas novidades. O botão **Baixar e instalar atualização** exige caixa fechado, carrinho vazio e uma cópia instalada pelo instalador. O download é conferido com SHA-256, e o sistema cria um backup na pasta `Backups` antes de abrir o instalador. Confirme o fechamento do PDV, instale na pasta já selecionada e reabra o aplicativo. Dados e fotos ficam preservados na pasta de dados.
 
