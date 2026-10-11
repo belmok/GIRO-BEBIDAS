@@ -4,7 +4,7 @@ Aplicativo para Windows, com identidade e depósito fictícios, desenvolvido em 
 
 ## Executar a versão pronta
 
-Abra `artifacts/distribuicao/1.0.0/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
+Abra `InstalarGiroBebidas.exe` na pasta principal, ou `artifacts/distribuicao/1.1.0/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
 
 Também é possível abrir `GiroBebidas.exe` diretamente ou extrair o pacote portátil. O desinstalador atua sobre instalações feitas pelo instalador; para a versão portátil, basta remover os executáveis. Os dados ficam em outra pasta.
 
@@ -26,6 +26,8 @@ O cadastro inicial contém 16 produtos fictícios para experimentar. Não há ve
 - Cadastro e teste de balanças seriais 8N1, leitura de texto em kg ou inteiro em gramas, pesagem manual.
 - Backup completo com fotos e usuários, cópias diárias, restauração e registro de operações.
 - Configuração de NFC-e, certificado A1/CSC protegidos, campos fiscais de produtos e conferência das pendências.
+- Atualizações por Releases públicas do GitHub, com download conferido e backup antes da instalação.
+- Controles com visual verde, carrinho ampliado, destaque ao passar o mouse e rolagem do menu pelo touchpad.
 
 ## Persistência
 
@@ -47,7 +49,7 @@ O cupom é **não fiscal**. Não há emissão de NF-e/NFC-e, TEF, confirmação 
 - `src/GiroBebidas.Uninstaller`: desinstalador WPF.
 - `tests/GiroBebidas.Tests`: verificações de comportamento, sem dependências de testes externas.
 
-A versão de todos os programas é definida em `Directory.Build.props`. Alterações são registradas em commits e a entrega inicial recebe a tag `v1.0.0`. Não há publicação em repositório remoto.
+A versão de todos os programas é definida em `Directory.Build.props`. Alterações são registradas em commits, com tags `v1.0.0` e `v1.1.0`. O remoto configurado é `belmok/GIRO-BEBIDAS`; o envio depende de uma conta com permissão de escrita. A publicação automática e manual está descrita em `docs/ATUALIZACOES-GITHUB.md`.
 
 ## Compilar e testar
 

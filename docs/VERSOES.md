@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.1.0 — 11/10/2026
+
+Atualizações por GitHub configuradas para `belmok/GIRO-BEBIDAS`, com consulta automática opcional, comparação de versões estáveis, download cancelável, limites e conferência SHA-256. A instalação exige caixa fechado e carrinho vazio, cria backup e abre o instalador na pasta existente. Workflow e script de publicação preparados; o envio ao repositório requer permissão de escrita.
+
+Novo ícone multirresolução para aplicativo, instalador e desinstalador. Seletores e barras com visual próprio, categorias sem corte, destaque verde ao passar o mouse, menu com touchpad e item selecionado visível, carrinho com maior área para produtos e rodapé adaptável. O instalador gerado é copiado para a pasta principal.
+
+171 verificações automatizadas aprovadas, incluindo regras do PDV, permissões, backup e cenários de atualização. 26 verificações WPF isoladas aprovadas; módulos e layout de 1200 × 760 renderizados no aplicativo real. A emissão SEFAZ continua pendente e os comprovantes permanecem não fiscais.
+
 ## 1.0.0 — 11/10/2026
 
 Primeira entrega do Giro Bebidas. Aplicativo, instalador e desinstalador usam C# + WPF e compartilham a versão definida em `Directory.Build.props`. Todo o código está no repositório Git local, na branch `main`, com histórico de implementação e tag `v1.0.0`.
