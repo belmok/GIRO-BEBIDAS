@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.1.1
+# Guia do Giro Bebidas — versão 1.2.0
 
 ## Instalação e primeiro acesso
 
@@ -26,9 +26,17 @@ Depois do cadastro, alterações de quantidade são feitas por **Entrada / ajust
 
 Em **Caixa → Abrir caixa**, informe o fundo de troco. Há um único caixa aberto por computador, utilizado pelos usuários autorizados.
 
+O indicador no alto da tela fica verde quando o caixa está aberto e vermelho claro quando está fechado.
+
 No **Frente de caixa**, clique no produto ou busque pelo nome, SKU ou código de barras. **F2** posiciona o cursor na busca; **Enter** adiciona o produto encontrado. O leitor USB deve estar configurado para digitar como teclado e enviar Enter depois do código.
 
+Use as categorias com ícones para filtrar os produtos. Os botões **Exibir em grade** e **Exibir em lista**, ao lado da quantidade encontrada, alternam a apresentação sem alterar a pesquisa nem os produtos da venda. A grade adapta a largura dos cartões ao tamanho da janela. Quando a pesquisa não encontra produtos, a tela informa isso; apague a busca ou escolha outra categoria.
+
+O carrinho mostra a foto cadastrada ou a ilustração do produto, quantidade, preço aplicado e total de cada item. Os botões **+**, **−** e **Remover produto** ajustam a seleção. Desconto, entrega, subtotal e total ficam na parte inferior. Em janelas menores, use a rolagem para acessar os produtos e todas as ações.
+
 Escolha o cliente quando necessário, ajuste quantidades, desconto em reais e taxa de entrega. **F4** abre o pagamento. Selecione dinheiro, Pix, débito, crédito ou fiado. Para dinheiro, informe o recebido e confira o troco. Para fiado, é obrigatório um cliente com limite disponível. O registro de Pix ou cartão é manual: confira o recebimento na sua conta ou maquininha.
+
+Ao finalizar ou salvar um pedido, o sistema confirma os valores de desconto e entrega ainda em edição. Isso vale também ao pressionar **F4** sem sair do campo; valores que não sejam números precisam ser corrigidos antes de continuar.
 
 Ao confirmar, venda, estoque e caixa são gravados juntos. O campo de observações e os dados de entrega podem aparecer no cupom. Após uma falha de impressão, a venda permanece registrada: reimprima em **Vendas**.
 

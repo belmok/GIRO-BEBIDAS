@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -38,6 +39,12 @@ public static class SmokeRunner
         var photoProduct = vm.Snapshot.Products[0]; photoProduct.PhotoBase64 = PhotoTools.Import(samplePhoto); photoProduct.Description = "Cerveja pilsen em lata de 350 ml. Ideal para servir gelada.";
         service.SaveProduct(photoProduct); vm.Refresh();
         if (PhotoTools.Decode(service.Snapshot.Products[0].PhotoBase64) is null) throw new InvalidOperationException("Falha na importação da foto.");
+        var photoLine = vm.Cart.Single(l => l.Product.Id == photoProduct.Id);
+        decimal photoCartTotal = vm.Total;
+        vm.Cart[vm.Cart.IndexOf(photoLine)] = new CartLine(vm.Snapshot.Products.Single(p => p.Id == photoProduct.Id), photoLine.Quantity);
+        if (vm.Cart.Single(l => l.Product.Id == photoProduct.Id).Image is not BitmapSource || vm.Total != photoCartTotal)
+            throw new InvalidOperationException("A foto persistida precisa aparecer no item do carrinho sem alterar seu total.");
+        vm.Refresh();
         service.ExportBackup(Path.Combine(output, "backup-com-foto.json"));
         var form = window.CreateProductDialog(photoProduct, false);
         // An unshown owner cannot be assigned to a visible window; clear it for offscreen QA.
@@ -86,8 +93,243 @@ public static class SmokeRunner
         switchSamples.Children.Add(new CheckBox { Content = "Opção desativada", IsChecked = false });
         var switchWindow = new Window { Width = 370, Height = 210, Content = switchSamples, Background = Brushes.White };
         Capture(switchWindow, Path.Combine(output, "25-interruptores.png")); switchWindow.Close();
+        CheckProductUi(window, output);
+        CheckCartAmounts(window);
+        CheckCashStatus(output);
         vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor.\n");
+        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados.\n");
+    }
+    private static void CheckProductUi(MainWindow window, string output)
+    {
+        var vm = window.Vm;
+        var originalCart = vm.Cart.Select(l => (Line: l, Quantity: l.Quantity)).ToArray();
+        var originalCustomer = vm.CartCustomer?.Id;
+        decimal originalDiscount = vm.Discount, originalDelivery = vm.DeliveryFee, originalTotal = vm.Total;
+        string originalPage = vm.Page, originalSearch = vm.Search, originalCategory = vm.Category, originalMessage = vm.Message;
+        bool originalView = vm.IsProductsList;
+        double originalWidth = window.Width, originalHeight = window.Height;
+        var valueProvider = (IValueProvider)new TextBoxAutomationPeer(window.ProductSearch).GetPattern(PatternInterface.Value);
+        var probe = vm.Snapshot.Products.Single(p => p.Code == "005" && p.Active && !p.IsWeighed);
+        void Search(string text) { valueProvider.SetValue(text); FlushLayout(window); }
+        void ShowView(bool list)
+        {
+            decimal totalBefore = vm.Total;
+            var button = list ? window.ProductListButton : window.ProductGridButton;
+            ((IInvokeProvider)new ButtonAutomationPeer(button).GetPattern(PatternInterface.Invoke)).Invoke();
+            FlushLayout(window);
+            if (vm.IsProductsList != list || vm.Total != totalBefore ||
+                window.ProductGridItems.Visibility != (list ? Visibility.Collapsed : Visibility.Visible) ||
+                window.ProductListItems.Visibility != (list ? Visibility.Visible : Visibility.Collapsed) ||
+                vm.GridViewVisibility != (list ? "Collapsed" : "Visible") || vm.ListViewVisibility != (list ? "Visible" : "Collapsed"))
+                throw new InvalidOperationException("Os controles de grade e lista precisam alternar a visualização preservando o total.");
+        }
+        try
+        {
+            window.Width = 1480; window.Height = 940; vm.Page = "PDV";
+            vm.Category = "Todos"; Search("");
+            if (!Descendants<Image>(window.CartItemsScrollViewer).Any(i => i.DataContext is CartLine l && l.Image is BitmapSource && ReferenceEquals(i.Source, l.Image)))
+                throw new InvalidOperationException("A miniatura da foto precisa estar vinculada à imagem do produto no carrinho.");
+            window.CategoryFilters.SelectedItem = vm.CategoryOptions.Single(c => c.Name == probe.Category); FlushLayout(window);
+            if (vm.Category != probe.Category || vm.Tiles.Count == 0 || vm.Tiles.Any(t => t.Product.Category != probe.Category))
+                throw new InvalidOperationException("Selecionar uma categoria precisa filtrar os produtos correspondentes.");
+            window.CategoryFilters.SelectedItem = vm.CategoryOptions.Single(c => c.Name == "Todos"); FlushLayout(window);
+            if (vm.Category != "Todos") throw new InvalidOperationException("A categoria Todos precisa restaurar o filtro.");
+            foreach (bool list in new[] { false, true })
+            {
+                ShowView(list);
+                foreach (string query in new[] { probe.Name, probe.Code, probe.Barcode })
+                {
+                    Search(query);
+                    var items = list ? window.ProductListItems : window.ProductGridItems;
+                    if (vm.Search != query || window.ProductSearch.Text != query || vm.Tiles.Count != 1 || vm.Tiles[0].Product.Id != probe.Id ||
+                        items.Items.Count != 1 || items.Items[0] is not ProductTile tile || tile.Product.Id != probe.Id ||
+                        window.ProductEmptyState.Visibility != Visibility.Collapsed)
+                        throw new InvalidOperationException($"A pesquisa nativa por {query} precisa exibir o produto correto em {(list ? "lista" : "grade")}.");
+                    AssertSearchReadable(window.ProductSearch);
+                    AssertProductBounds(window, items);
+                    if (!list && query == probe.Name) Capture(window, Path.Combine(output, "26-grade-busca.png"));
+                    var quantities = vm.Cart.ToDictionary(l => l.Product.Id, l => l.Quantity);
+                    var enter = KeyEvent(window, Key.Enter, Keyboard.KeyDownEvent);
+                    window.ProductSearch.RaiseEvent(enter); FlushLayout(window);
+                    if (!enter.Handled || vm.Search != "" || window.ProductSearch.Text != "" ||
+                        vm.Cart.Single(l => l.Product.Id == probe.Id).Quantity != quantities.GetValueOrDefault(probe.Id) + 1 ||
+                        vm.Cart.Any(l => l.Product.Id != probe.Id && (!quantities.TryGetValue(l.Product.Id, out decimal q) || l.Quantity != q)))
+                        throw new InvalidOperationException("Enter precisa adicionar somente o produto pesquisado e limpar a busca.");
+                    foreach (var line in vm.Cart.ToArray())
+                    {
+                        if (quantities.TryGetValue(line.Product.Id, out decimal quantity)) line.Quantity = quantity;
+                        else vm.Cart.Remove(line);
+                    }
+                    vm.Refresh(); vm.Message = originalMessage; FlushLayout(window);
+                    if (vm.Total != originalTotal) throw new InvalidOperationException("A pesquisa não pode alterar o total após restaurar as quantidades.");
+                }
+                if (list) { AssertProductBounds(window, window.ProductListItems); Capture(window, Path.Combine(output, "27-produtos-lista.png")); }
+            }
+            Search(probe.Barcode);
+            FocusManager.SetFocusedElement(FocusManager.GetFocusScope(window.ProductSearch), window.ProductListButton);
+            var f2 = KeyEvent(window, Key.F2, Keyboard.PreviewKeyDownEvent);
+            window.RaiseEvent(f2); FlushLayout(window);
+            if (!f2.Handled || vm.Page != "PDV" || window.ProductSearch.SelectionStart != 0 || window.ProductSearch.SelectionLength != probe.Barcode.Length ||
+                (!window.ProductSearch.IsKeyboardFocused && FocusManager.GetFocusedElement(FocusManager.GetFocusScope(window.ProductSearch)) != window.ProductSearch))
+                throw new InvalidOperationException("F2 precisa focalizar a busca e selecionar seu texto, inclusive na janela de QA sem ativação.");
+            Search("produto-inexistente-" + Guid.NewGuid().ToString("N"));
+            if (vm.Tiles.Count != 0 || window.ProductListItems.Items.Count != 0 || window.ProductGridItems.Items.Count != 0 || window.ProductEmptyState.Visibility != Visibility.Visible)
+                throw new InvalidOperationException("Uma pesquisa sem correspondência precisa mostrar o estado sem resultados.");
+            Capture(window, Path.Combine(output, "28-busca-sem-resultados.png"));
+            window.Width = 1200; window.Height = 760; Search("");
+            foreach (bool list in new[] { false, true })
+            {
+                ShowView(list);
+                AssertProductBounds(window, list ? window.ProductListItems : window.ProductGridItems);
+            }
+            Search(probe.Name); AssertSearchReadable(window.ProductSearch);
+            var searchPosition = window.SearchFrame.TranslatePoint(new Point(), (FrameworkElement)window.Content);
+            if (searchPosition.X < 0 || searchPosition.Y < 0 || searchPosition.X + window.SearchFrame.ActualWidth > ((FrameworkElement)window.Content).ActualWidth + 0.5)
+                throw new InvalidOperationException("A pesquisa precisa permanecer dentro da janela de 1200 x 760.");
+            Capture(window, Path.Combine(output, "29-busca-tela-menor.png"));
+            Search("");
+            var order = vm.Snapshot.Orders.First(o => o.IsOpen && o.Lines.Count > 0);
+            vm.LoadOrder(order); FlushLayout(window);
+            var reservedQuantities = vm.Cart.ToDictionary(l => l.Product.Id, l => l.Quantity);
+            foreach (bool list in new[] { false, true })
+            {
+                ShowView(list);
+                var items = list ? window.ProductListItems : window.ProductGridItems;
+                if (vm.CanEditCart || vm.ActiveOrderId != order.Id || vm.Total != order.Total || vm.AddProductCommand.CanExecute(vm.Tiles.First()) ||
+                    vm.Cart.Any(l => vm.IncrementCommand.CanExecute(l) || vm.DecrementCommand.CanExecute(l) || vm.RemoveCommand.CanExecute(l) || l.Quantity != reservedQuantities[l.Product.Id]) ||
+                    Descendants<Button>(items).Any(b => b.DataContext is ProductTile && b.IsEnabled) ||
+                    Descendants<Button>(window.CartItemsScrollViewer).Any(b => b.Command is not null && b.IsEnabled))
+                    throw new InvalidOperationException("Um pedido reservado precisa preservar quantidades, preços e total, com os comandos de edição desativados nas duas visualizações.");
+            }
+        }
+        finally
+        {
+            vm.ClearCart();
+            foreach (var saved in originalCart) { saved.Line.Quantity = saved.Quantity; vm.Cart.Add(saved.Line); }
+            vm.Discount = originalDiscount; vm.DeliveryFee = originalDelivery; vm.Refresh();
+            vm.CartCustomer = vm.CustomerOptions.FirstOrDefault(c => c.Id == originalCustomer);
+            vm.Category = originalCategory; vm.Search = originalSearch; vm.IsProductsList = originalView; vm.Page = originalPage; vm.Message = originalMessage;
+            window.Width = originalWidth; window.Height = originalHeight; FlushLayout(window);
+        }
+    }
+    private static void CheckCartAmounts(MainWindow window)
+    {
+        var vm = window.Vm;
+        decimal originalDiscount = vm.Discount, originalDelivery = vm.DeliveryFee, originalTotal = vm.Total;
+        string originalPage = vm.Page;
+        var discountProvider = (IValueProvider)new TextBoxAutomationPeer(window.CartDiscountInput).GetPattern(PatternInterface.Value);
+        var deliveryProvider = (IValueProvider)new TextBoxAutomationPeer(window.CartDeliveryInput).GetPattern(PatternInterface.Value);
+        try
+        {
+            vm.Page = "PDV"; FlushLayout(window);
+            discountProvider.SetValue("3,50"); deliveryProvider.SetValue("4,00"); FlushLayout(window);
+            if (vm.Discount != originalDiscount || vm.DeliveryFee != originalDelivery || vm.Total != originalTotal)
+                throw new InvalidOperationException("Desconto e entrega devem permanecer pendentes enquanto o usuário não confirma os campos ou perde o foco.");
+            window.CommitCartAmounts(); FlushLayout(window);
+            if (vm.Discount != 3.5m || vm.DeliveryFee != 4m || vm.Total != vm.Subtotal - 3.5m + 4m)
+                throw new InvalidOperationException("Confirmar os campos precisa aplicar desconto e entrega digitados, inclusive antes da perda de foco.");
+            foreach (var (input, provider, validValue) in new[]
+            {
+                (window.CartDiscountInput, discountProvider, "3,50"),
+                (window.CartDeliveryInput, deliveryProvider, "4,00")
+            })
+            {
+                provider.SetValue("dado inválido");
+                bool rejected = false;
+                try { window.CommitCartAmounts(); }
+                catch (InvalidOperationException) { rejected = true; }
+                if (!rejected || !Validation.GetHasError(input))
+                    throw new InvalidOperationException("Texto inválido em desconto ou entrega precisa bloquear a confirmação da venda.");
+                provider.SetValue(validValue); window.CommitCartAmounts(); FlushLayout(window);
+                if (Validation.GetHasError(input) || vm.Discount != 3.5m || vm.DeliveryFee != 4m || vm.Total != vm.Subtotal - 3.5m + 4m)
+                    throw new InvalidOperationException("Corrigir o valor deve remover o erro de validação e preservar o total correto.");
+            }
+        }
+        finally
+        {
+            vm.Discount = originalDiscount; vm.DeliveryFee = originalDelivery;
+            window.CartDiscountInput.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            window.CartDeliveryInput.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            vm.Page = originalPage; FlushLayout(window);
+        }
+    }
+    private static void CheckCashStatus(string output)
+    {
+        // A separate store keeps cash opening/closing checks out of the main fixture's history.
+        var cashService = new StoreService(new JsonStore(Path.Combine(output, "dados-caixa-teste-" + Guid.NewGuid().ToString("N"))));
+        cashService.Login("ADMIN", "ADMIN"); cashService.OpenCash(250);
+        var cashWindow = new MainWindow(cashService, false) { Width = 1200, Height = 760 };
+        try
+        {
+            Capture(cashWindow, Path.Combine(output, "31-caixa-aberto.png"));
+            AssertCashStatus(cashWindow, true);
+            decimal expected = cashWindow.Vm.CashSummary?.Expected ?? throw new InvalidOperationException("O caixa de teste precisa estar aberto.");
+            cashService.CloseCash(expected, "Conferência automática da aparência do caixa.");
+            cashWindow.Vm.Refresh(); FlushLayout(cashWindow); AssertCashStatus(cashWindow, false);
+            Capture(cashWindow, Path.Combine(output, "30-caixa-fechado.png"));
+            cashService.OpenCash(250); cashWindow.Vm.Refresh(); FlushLayout(cashWindow); AssertCashStatus(cashWindow, true);
+            Capture(cashWindow, Path.Combine(output, "31-caixa-aberto.png"));
+        }
+        finally { cashWindow.Vm.ClearCart(); cashWindow.Close(); }
+    }
+    private static void AssertCashStatus(MainWindow window, bool open)
+    {
+        Brush? dotBrush = ((DependencyObject)window.CashStatusDot) switch
+        {
+            Border border => border.Background,
+            System.Windows.Shapes.Shape shape => shape.Fill,
+            _ => null
+        };
+        string background = open ? "#E9F5EB" : "#FFF4F1", ink = open ? "#187B52" : "#B4483E", borderColor = open ? "#D4EAD9" : "#F0D5CF";
+        static bool Matches(Brush? brush, string hex) => brush is SolidColorBrush solid && solid.Color == (Color)ColorConverter.ConvertFromString(hex);
+        if (window.Vm.CashIsOpen != open || window.CashStatusLabel.Text != (open ? "Caixa aberto" : "Caixa fechado") ||
+            !Matches(window.CashStatusBadge.Background, background) || !Matches(window.CashStatusBadge.BorderBrush, borderColor) ||
+            !Matches(window.CashStatusLabel.Foreground, ink) || !Matches(dotBrush, ink))
+            throw new InvalidOperationException("O indicador de caixa precisa ficar verde ao abrir e vermelho ao fechar, incluindo fundo, borda, texto e ponto.");
+    }
+    private static KeyEventArgs KeyEvent(Window window, Key key, RoutedEvent routedEvent)
+        => new(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window) ?? throw new InvalidOperationException("A janela de QA precisa estar renderizada."), Environment.TickCount, key) { RoutedEvent = routedEvent };
+    private static void FlushLayout(Window window)
+    {
+        window.UpdateLayout(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle); window.UpdateLayout();
+    }
+    private static void AssertSearchReadable(TextBox search)
+    {
+        search.ApplyTemplate();
+        if (search.Template.FindName("PART_ContentHost", search) is not ScrollViewer host || search.ActualWidth < 100 ||
+            host.ViewportHeight + 0.5 < search.FontSize * search.FontFamily.LineSpacing || host.ViewportWidth <= 0 ||
+            search.Foreground is not SolidColorBrush ink || ink.Color.A == 0)
+            throw new InvalidOperationException("O campo de pesquisa precisa reservar espaço para uma linha de texto legível.");
+        foreach (int index in new[] { 0, search.Text.Length - 1 })
+        {
+            var character = search.GetRectFromCharacterIndex(index, true);
+            if (character.IsEmpty || character.Height <= 0 || character.Top < -0.5 || character.Bottom > search.ActualHeight + 0.5 ||
+                character.Left < -0.5 || character.Right > search.ActualWidth + 0.5)
+                throw new InvalidOperationException("O texto e o cursor da pesquisa não podem ficar recortados.");
+        }
+    }
+    private static void AssertProductBounds(MainWindow window, ItemsControl items)
+    {
+        var buttons = Descendants<Button>(items).Where(b => b.DataContext is ProductTile).ToArray();
+        if (items.Items.Count != window.Vm.Tiles.Count || buttons.Length != items.Items.Count || buttons.Length == 0 ||
+            buttons.Length > window.Vm.Snapshot.Products.Count(p => p.Active) || window.ProductViewport.ViewportWidth <= 0 ||
+            !double.IsFinite(window.Vm.ProductCardWidth) || window.Vm.ProductCardWidth <= 0 || window.Vm.ProductCardWidth > window.ProductViewport.ViewportWidth + 0.5)
+            throw new InvalidOperationException("Os produtos renderizados precisam corresponder ao filtro e caber na área disponível.");
+        foreach (var button in buttons)
+        {
+            var position = button.TranslatePoint(new Point(), window.ProductViewport);
+            if (button.ActualWidth <= 0 || position.X < -0.5 || position.X + button.ActualWidth > window.ProductViewport.ViewportWidth + 0.5)
+                throw new InvalidOperationException("Os cartões e as linhas dos produtos não podem sofrer recorte horizontal.");
+        }
+    }
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) yield return match;
+            foreach (var descendant in Descendants<T>(child)) yield return descendant;
+        }
     }
     private static void Capture(Window window, string path)
     {

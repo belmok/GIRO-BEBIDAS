@@ -2,9 +2,9 @@
  <Window.Resources>
   <Style x:Key="NavItemStyle" TargetType="ListBoxItem"><Setter Property="Padding" Value="13,12"/><Setter Property="Margin" Value="0,3"/><Setter Property="Foreground" Value="#A6BDB3"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="NavBorder" Background="Transparent" CornerRadius="9" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="NavBorder" Property="Background" Value="#254E3B"/><Setter Property="Foreground" Value="#CCF1C0"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="NavBorder" Property="Background" Value="#1C4032"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
   <Style x:Key="CategoryStyle" TargetType="ListBoxItem">
-   <Setter Property="Padding" Value="13,9"/><Setter Property="MinHeight" Value="40"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Margin" Value="0,0,6,0"/><Setter Property="Foreground" Value="#6B7E70"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Padding" Value="12,10"/><Setter Property="MinHeight" Value="44"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Margin" Value="0,0,8,7"/><Setter Property="Foreground" Value="#6B7E70"/><Setter Property="Cursor" Value="Hand"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
-    <Border x:Name="Pill" Background="White" BorderBrush="#E3E9E5" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}"><ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/></Border>
+    <Border x:Name="Pill" Background="White" BorderBrush="#E3E9E5" BorderThickness="1" CornerRadius="10" Padding="{TemplateBinding Padding}"><ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/></Border>
     <ControlTemplate.Triggers>
      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Pill" Property="Background" Value="#E3F2E8"/><Setter TargetName="Pill" Property="BorderBrush" Value="#8AB79B"/><Setter Property="Foreground" Value="#245A3D"/></Trigger>
      <Trigger Property="IsSelected" Value="True"><Setter TargetName="Pill" Property="Background" Value="#E3F0DF"/><Setter TargetName="Pill" Property="BorderBrush" Value="#BDDCB5"/><Setter Property="Foreground" Value="#2D693E"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
@@ -16,7 +16,7 @@
   <Style x:Key="ProductCardStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
    <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#E3E9E5"/><Setter Property="Padding" Value="0"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-    <Border x:Name="ProductCardBorder" CornerRadius="9" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/></Border>
+    <Border x:Name="ProductCardBorder" CornerRadius="12" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/></Border>
     <ControlTemplate.Triggers>
      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ProductCardBorder" Property="Background" Value="#E3F2E8"/><Setter TargetName="ProductCardBorder" Property="BorderBrush" Value="#8AB79B"/></Trigger>
      <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ProductCardBorder" Property="Background" Value="#E3F2E8"/><Setter TargetName="ProductCardBorder" Property="BorderBrush" Value="#187B52"/></Trigger>
@@ -24,6 +24,29 @@
      <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ProductCardBorder" Property="Opacity" Value="0.42"/></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="SearchTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+   <Setter Property="Foreground" Value="#172B29"/><Setter Property="Background" Value="Transparent"/><Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Normal"/>
+   <Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="0"/><Setter Property="MinHeight" Value="0"/><Setter Property="Height" Value="44"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+   <Setter Property="TextWrapping" Value="NoWrap"/><Setter Property="SelectionBrush" Value="#BCE4CB"/><Setter Property="HorizontalScrollBarVisibility" Value="Hidden"/><Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+    <Grid Background="{TemplateBinding Background}">
+     <ScrollViewer x:Name="PART_ContentHost" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"/>
+     <TextBlock x:Name="SearchPlaceholder" Text="{TemplateBinding Tag}" Foreground="#788D83" FontSize="13" FontWeight="Normal" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" IsHitTestVisible="False" Visibility="Collapsed"/>
+    </Grid>
+    <ControlTemplate.Triggers><Trigger Property="Text" Value=""><Setter TargetName="SearchPlaceholder" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="ProductViewButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+   <Setter Property="Width" Value="34"/><Setter Property="Height" Value="34"/><Setter Property="MinHeight" Value="34"/><Setter Property="Padding" Value="0"/><Setter Property="Foreground" Value="#6F8275"/><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#DFE8E1"/>
+  </Style>
+  <Style x:Key="ProductImageSurface" TargetType="Border">
+   <Setter Property="Background" Value="#F3F7F1"/><Setter Property="CornerRadius" Value="12,12,0,0"/>
+   <Style.Triggers>
+    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#D8EEDC"/></DataTrigger>
+    <DataTrigger Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#D8EEDC"/></DataTrigger>
+    <DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#BDE0C6"/></DataTrigger>
+   </Style.Triggers>
   </Style>
  </Window.Resources>
  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="240"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -34,26 +57,226 @@
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="37"/><ColumnDefinition Width="*"/><ColumnDefinition Width="30"/></Grid.ColumnDefinitions><Border Background="#315C43" CornerRadius="17" Width="34" Height="34"><TextBlock Text="{Binding OperatorInitial}" Foreground="#D7F0CC" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="8,0,0,0"><TextBlock Text="{Binding OperatorName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/><TextBlock Text="{Binding OperatorRole}" Foreground="#85A792" FontSize="10" Margin="0,4,0,0"/></StackPanel><Button Grid.Column="2" Background="Transparent" BorderThickness="0" Foreground="#9DC0A8" Padding="4" Content="↪" FontSize="19" ToolTip="Sair do sistema" Click="Logout_Click"/></Grid>
    </StackPanel>
   </Grid></Border>
-  <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="93"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="34"/></Grid.RowDefinitions>
-   <Border Background="White" BorderBrush="#E3E9E5" BorderThickness="0,0,0,1"><Grid Margin="28,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding PageTitle}" FontSize="25" FontWeight="SemiBold"/><TextBlock Text="{Binding PageSubtitle}" Foreground="#7E8D83" FontSize="12" Margin="0,5,0,0"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="{Binding Today}" Foreground="#7B8A7F" FontSize="12" VerticalAlignment="Center" Margin="0,0,23,0"/><Border Background="#E9F2E5" Padding="12,8" CornerRadius="7"><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#6A9D4D" Margin="0,0,7,0"/><TextBlock Text="{Binding CashStatus}" Foreground="#4A7536" FontSize="12" FontWeight="SemiBold"/></StackPanel></Border></StackPanel></Grid></Border>
+  <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="93"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="38"/></Grid.RowDefinitions>
+   <Border Background="White" BorderBrush="#E3E9E5" BorderThickness="0,0,0,1">
+    <Grid Margin="28,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <Border Width="46" Height="46" Background="#E5F4E8" CornerRadius="12" Margin="0,0,14,0" VerticalAlignment="Center">
+      <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Page}" Value="PDV"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
+      <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="25" Foreground="#187B52" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0"><TextBlock Text="{Binding PageTitle}" FontSize="26" FontWeight="SemiBold" Foreground="#172B29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding PageTitle}"/><TextBlock Text="{Binding PageSubtitle}" Foreground="#7B8E82" FontSize="12" Margin="0,5,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/></StackPanel>
+     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+      <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#187B52" VerticalAlignment="Center" Margin="0,0,8,0"/>
+      <TextBlock Text="{Binding Today}" Foreground="#73897B" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0"/>
+      <Border x:Name="CashStatusBadge" Padding="12,9" CornerRadius="9" BorderThickness="1">
+       <Border.Style>
+        <Style TargetType="Border">
+         <Setter Property="Background" Value="#E9F5EB"/>
+         <Setter Property="BorderBrush" Value="#D4EAD9"/>
+         <Style.Triggers>
+          <DataTrigger Binding="{Binding CashIsOpen}" Value="False">
+           <Setter Property="Background" Value="#FFF4F1"/>
+           <Setter Property="BorderBrush" Value="#F0D5CF"/>
+          </DataTrigger>
+         </Style.Triggers>
+        </Style>
+       </Border.Style>
+       <StackPanel Orientation="Horizontal">
+        <Ellipse x:Name="CashStatusDot" Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center">
+         <Ellipse.Style>
+          <Style TargetType="Ellipse">
+           <Setter Property="Fill" Value="#187B52"/>
+           <Style.Triggers>
+            <DataTrigger Binding="{Binding CashIsOpen}" Value="False"><Setter Property="Fill" Value="#B4483E"/></DataTrigger>
+           </Style.Triggers>
+          </Style>
+         </Ellipse.Style>
+        </Ellipse>
+        <TextBlock x:Name="CashStatusLabel" Text="{Binding CashStatus}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="NoWrap">
+         <TextBlock.Style>
+          <Style TargetType="TextBlock">
+           <Setter Property="Foreground" Value="#187B52"/>
+           <Style.Triggers>
+            <DataTrigger Binding="{Binding CashIsOpen}" Value="False"><Setter Property="Foreground" Value="#B4483E"/></DataTrigger>
+           </Style.Triggers>
+          </Style>
+         </TextBlock.Style>
+        </TextBlock>
+       </StackPanel>
+      </Border>
+     </StackPanel>
+    </Grid>
+   </Border>
    <Border Grid.Row="1" Background="#E6F2DF" Margin="28,10,28,0" Padding="14,10" CornerRadius="8"><Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding Message}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style><DockPanel><Button Content="×" DockPanel.Dock="Right" Padding="5,0" MinHeight="20" Background="Transparent" BorderThickness="0" Click="DismissMessage_Click"/><TextBlock Text="{Binding Message}" Foreground="#315C35" VerticalAlignment="Center"/></DockPanel></Border>
    <Grid Grid.Row="2" Margin="28,23,28,20">
-    <Grid Visibility="{Binding Page, Converter={StaticResource PageVisibility}, ConverterParameter=PDV}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/><ColumnDefinition Width="355"/></Grid.ColumnDefinitions>
-     <Grid><Grid.RowDefinitions><RowDefinition Height="51"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="25"/></Grid.RowDefinitions>
-      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Border Background="White" CornerRadius="9" BorderBrush="#DDE6DC" BorderThickness="1"><DockPanel><TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" Foreground="#7B8A7F" VerticalAlignment="Center" Margin="15,0,0,0"/><TextBlock Text="F2" DockPanel.Dock="Right" Foreground="#9DA89F" Margin="8,0,14,0" VerticalAlignment="Center"/><TextBox x:Name="ProductSearch" Tag="Buscar produto ou ler código de barras..." Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" ToolTip="Buscar por nome, código ou código de barras. Enter adiciona o produto." KeyDown="ProductSearch_KeyDown" BorderThickness="0" Background="Transparent" Margin="2,2"/></DockPanel></Border><Button Grid.Column="1" Content="Novo produto" Style="{StaticResource PrimaryButton}" Margin="10,0,0,0" Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}" Click="NewProduct_Click"/></Grid>
-      <ListBox Grid.Row="1" SelectedItem="{Binding Category}" Background="Transparent" BorderThickness="0" Padding="0" VerticalAlignment="Top" Margin="0,14,0,8" ItemContainerStyle="{StaticResource CategoryStyle}" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled"><ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel><sys:String>Todos</sys:String><sys:String>Cervejas</sys:String><sys:String>Refrigerantes</sys:String><sys:String>Destilados</sys:String><sys:String>Água e gelo</sys:String><sys:String>Outros</sys:String></ListBox>
-      <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,5,0,0"><ItemsControl ItemsSource="{Binding Tiles}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate>
-       <Button Style="{StaticResource ProductCardStyle}" Width="194" Margin="0,0,12,13" Padding="0" HorizontalContentAlignment="Stretch" Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"><Grid Width="192"><Grid.RowDefinitions><RowDefinition Height="124"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Border CornerRadius="9,9,0,0"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#F3F6EF"/><Style.Triggers><DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#D8EEDC"/></DataTrigger><DataTrigger Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#D8EEDC"/></DataTrigger><DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource AncestorType=Button}}" Value="True"><Setter Property="Background" Value="#BDE0C6"/></DataTrigger></Style.Triggers></Style></Border.Style><Grid><Image Source="{Binding Image}" Height="103" Width="125" Margin="0,7,0,0"/><TextBlock Text="{Binding Code}" FontSize="9" FontWeight="Normal" Foreground="#9CA994" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0"/></Grid></Border><StackPanel Grid.Row="1" Margin="14,13,14,13"><TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Height="35"/><Grid Margin="0,7,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="30"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding Price}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{Binding Unit}" FontSize="10" FontWeight="Normal" Foreground="#98A492"/></StackPanel><Border Grid.Column="1" Background="#E4EFDE" CornerRadius="9" Width="29" Height="29" VerticalAlignment="Center"><TextBlock Text="+" Foreground="#467336" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></Grid><TextBlock Text="{Binding Stock}" Foreground="{Binding StockBrush}" FontWeight="Normal" FontSize="10" Margin="0,11,0,0"/><TextBlock Text="{Binding Wholesale}" Foreground="#95A18F" FontSize="9" FontWeight="Normal" Margin="0,5,0,0"/></StackPanel></Grid></Button>
-      </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer><TextBlock Grid.Row="3" Text="{Binding ProductCount}" FontSize="11" Foreground="#8A998B" VerticalAlignment="Bottom"/>
-     </Grid>
-     <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="3*"/><RowDefinition Height="2*" MaxHeight="180"/></Grid.RowDefinitions>
-      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding CartTitle}" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="{Binding CartCount}" Foreground="#8A988C" FontSize="10" VerticalAlignment="Center" Margin="8,0"/><Button Grid.Column="2" Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="16" Background="Transparent" BorderThickness="0" Foreground="#A0AAA0" Padding="4" MinHeight="28" Width="28" ToolTip="Limpar venda" Click="ClearCart_Click"/></Grid>
-      <Grid Grid.Row="1" Margin="0,8,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="CLIENTE" FontSize="10" Foreground="#7B8C7C" VerticalAlignment="Center"/><ComboBox Grid.Column="1" MinHeight="36" ItemsSource="{Binding CustomerOptions}" DisplayMemberPath="Name" SelectedItem="{Binding CartCustomer}" IsEnabled="{Binding CanEditCart}"/></Grid>
-      <Grid x:Name="CartItemsViewport" Grid.Row="2"><ScrollViewer x:Name="CartItemsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><ItemsControl ItemsSource="{Binding Cart}"><ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="#EDF1E9" BorderThickness="0,0,0,1" Padding="0,8"><StackPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/><Button Grid.Column="1" Content="×" FontSize="14" Padding="3,0" MinHeight="20" Width="24" BorderThickness="0" Foreground="#A4ADA3" ToolTip="Remover produto" Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/></Grid><TextBlock Text="{Binding PriceLabel}" FontSize="10" Foreground="#95A18F" Margin="0,3,0,5"/><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><Button Content="−" Width="28" Height="27" MinHeight="27" Padding="0" ToolTip="Diminuir quantidade" Command="{Binding DataContext.DecrementCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/><TextBlock Text="{Binding QuantityLabel}" MinWidth="38" TextAlignment="Center" VerticalAlignment="Center" FontSize="12"/><Button Content="+" Width="28" Height="27" MinHeight="27" Padding="0" ToolTip="Aumentar quantidade" Command="{Binding DataContext.IncrementCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=C2}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
-       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding EmptyCartVisibility}" Margin="12"><TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="34" Foreground="#C1D0B8" HorizontalAlignment="Center"/><TextBlock Text="A próxima venda começa aqui" FontWeight="SemiBold" FontSize="13" Foreground="#788B70" TextAlignment="Center" Margin="0,12,0,6"/><TextBlock Text="Selecione um produto ou leia o código de barras." FontSize="11" Foreground="#A0ADA0" TextAlignment="Center"/></StackPanel>
+<Grid Visibility="{Binding Page, Converter={StaticResource PageVisibility}, ConverterParameter=PDV}">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="380"/></Grid.ColumnDefinitions>
+     <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="50"/><RowDefinition Height="Auto"/><RowDefinition Height="42"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <Grid>
+       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <Border x:Name="SearchFrame" Background="White" CornerRadius="10" BorderThickness="1" Margin="0,1">
+        <Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="#DCE7E0"/><Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="#91B5A0"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="#187B52"/></Trigger></Style.Triggers></Style></Border.Style>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/><ColumnDefinition Width="35"/></Grid.ColumnDefinitions>
+         <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="#365C49" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+         <TextBox x:Name="ProductSearch" Grid.Column="1" Style="{StaticResource SearchTextBox}" Tag="Buscar produto ou ler código de barras..."
+                  Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" ToolTip="Busque por nome, código ou código de barras. Enter adiciona o produto."
+                  KeyDown="ProductSearch_KeyDown" AutomationProperties.Name="Buscar produto ou ler código de barras"/>
+         <Border Grid.Column="2" BorderBrush="#EDF2EE" BorderThickness="1,0,0,0" Margin="0,10,5,10"><TextBlock Text="F2" Foreground="#7A8C81" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/></Border>
+        </Grid>
+       </Border>
+       <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Margin="10,0,0,0" Padding="14,9" MinHeight="48"
+               Visibility="{Binding IsAdmin, Converter={StaticResource BoolVisibility}}" Click="NewProduct_Click"
+               ToolTip="Cadastrar um produto com foto, descrição e preço." AutomationProperties.Name="Novo produto">
+        <StackPanel Orientation="Horizontal"><TextBlock Text="+" FontSize="23" FontWeight="Normal" Margin="0,-2,9,0" VerticalAlignment="Center"/><TextBlock Text="Novo produto" FontSize="12" VerticalAlignment="Center"/></StackPanel>
+       </Button>
       </Grid>
-      <ScrollViewer x:Name="CartFooterScrollViewer" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Border BorderBrush="#E9EEE3" BorderThickness="0,1,0,0" Padding="0,6,0,0"><StackPanel><DockPanel Margin="0,0,0,3"><TextBlock Text="Subtotal" Foreground="#7E9076" FontSize="11"/><TextBlock Text="{Binding Subtotal, StringFormat=C2}" FontSize="11" HorizontalAlignment="Right"/></DockPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Desconto (R$)" FontSize="10" Foreground="#8F9B87" Margin="0,0,0,3"/><TextBox Text="{Binding Discount, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditCart}" Padding="8,5" MinHeight="32" FontSize="12"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Entrega (R$)" FontSize="10" Foreground="#8F9B87" Margin="0,0,0,3"/><TextBox Text="{Binding DeliveryFee, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditCart}" Padding="8,5" MinHeight="32" FontSize="12"/></StackPanel></Grid><DockPanel Margin="0,4,0,4"><TextBlock Text="Total" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/><TextBlock Text="{Binding Total, StringFormat=C2}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Right"/></DockPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Button Content="Finalizar venda · F4" Style="{StaticResource PrimaryButton}" Padding="10,7" FontSize="12" MinHeight="36" IsEnabled="{Binding CanSell}" Click="Checkout_Click"/><Button Grid.Column="2" Content="Salvar pedido" Padding="8,7" FontSize="12" MinHeight="36" IsEnabled="{Binding CanEditCart}" ToolTip="Salvar como pedido" Click="SaveOrder_Click"/></Grid><TextBlock Text="{Binding CartHint}" TextAlignment="Center" FontSize="9" Foreground="#96A48B" Margin="0,4,0,0"/></StackPanel></Border></ScrollViewer>
-     </Grid></Border>
+      <ListBox x:Name="CategoryFilters" Grid.Row="1" ItemsSource="{Binding CategoryOptions}" SelectedValuePath="Name" SelectedValue="{Binding Category}"
+               Background="Transparent" BorderThickness="0" Padding="0" VerticalAlignment="Top" Margin="0,13,0,1"
+               ItemContainerStyle="{StaticResource CategoryStyle}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+               AutomationProperties.Name="Categorias de bebidas">
+       <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
+       <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal">
+        <Path Data="{Binding Icon}" Stretch="Uniform" Width="17" Height="18" Margin="0,0,8,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+       </StackPanel></DataTemplate></ListBox.ItemTemplate>
+      </ListBox>
+      <Grid Grid.Row="2" Margin="0,4,0,4">
+       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <TextBlock Text="{Binding ProductCount}" FontSize="11" Foreground="#788D7E" VerticalAlignment="Center"/>
+       <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <Button x:Name="ProductGridButton" Click="ProductGrid_Click" Margin="0,0,6,0" ToolTip="Mostrar produtos em grade" AutomationProperties.Name="Mostrar produtos em grade">
+         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource ProductViewButton}"><Style.Triggers><DataTrigger Binding="{Binding IsProductsList}" Value="False"><Setter Property="Background" Value="#187B52"/><Setter Property="BorderBrush" Value="#187B52"/><Setter Property="Foreground" Value="White"/></DataTrigger></Style.Triggers></Style></Button.Style>
+         <Path Data="M 1,1 L 7,1 L 7,7 L 1,7 Z M 11,1 L 17,1 L 17,7 L 11,7 Z M 1,11 L 7,11 L 7,17 L 1,17 Z M 11,11 L 17,11 L 17,17 L 11,17 Z" Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4"/>
+        </Button>
+        <Button x:Name="ProductListButton" Click="ProductList_Click" ToolTip="Mostrar produtos em lista" AutomationProperties.Name="Mostrar produtos em lista">
+         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource ProductViewButton}"><Style.Triggers><DataTrigger Binding="{Binding IsProductsList}" Value="True"><Setter Property="Background" Value="#187B52"/><Setter Property="BorderBrush" Value="#187B52"/><Setter Property="Foreground" Value="White"/></DataTrigger></Style.Triggers></Style></Button.Style>
+         <Path Data="M 1,3 L 2,3 M 6,3 L 17,3 M 1,9 L 2,9 M 6,9 L 17,9 M 1,15 L 2,15 M 6,15 L 17,15" Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+        </Button>
+       </StackPanel>
+      </Grid>
+      <ScrollViewer x:Name="ProductViewport" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,5,0,0"
+                    SizeChanged="ProductViewport_SizeChanged" ScrollChanged="ProductViewport_ScrollChanged" AutomationProperties.Name="Produtos disponíveis">
+       <Grid>
+        <ItemsControl x:Name="ProductGridItems" ItemsSource="{Binding Tiles}" Visibility="{Binding GridViewVisibility}">
+         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+         <ItemsControl.ItemTemplate><DataTemplate>
+          <Button Style="{StaticResource ProductCardStyle}" Width="{Binding DataContext.ProductCardWidth, RelativeSource={RelativeSource AncestorType=Window}}"
+                  Margin="0,0,12,12" Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                  ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+           <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="138"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Border Style="{StaticResource ProductImageSurface}"><Grid>
+             <Image Source="{Binding Image}" Height="115" Margin="18,14,18,5" Stretch="Uniform"/>
+             <Border Background="#EDF5EF" CornerRadius="4" Padding="5,3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,9,0,0">
+              <TextBlock Text="{Binding Code}" FontSize="8" FontWeight="Normal" Foreground="#6D8C79" TextWrapping="NoWrap"/>
+             </Border>
+            </Grid></Border>
+            <StackPanel Grid.Row="1" Margin="14,12,14,14">
+             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#172B29" Height="35" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+             <Grid Margin="0,6,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="36"/></Grid.ColumnDefinitions>
+              <StackPanel><TextBlock Text="{Binding Price}" FontSize="21" FontWeight="SemiBold" Foreground="#172B29" TextWrapping="NoWrap"/><TextBlock Text="{Binding Unit}" FontSize="10" FontWeight="Normal" Foreground="#819282" Margin="0,2,0,0" TextWrapping="NoWrap"/></StackPanel>
+              <Border Grid.Column="1" Background="#E4F3E6" CornerRadius="18" Width="36" Height="36" VerticalAlignment="Center"><TextBlock Text="+" Foreground="#187B52" FontSize="24" FontWeight="Normal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/></Border>
+             </Grid>
+             <TextBlock Text="{Binding Stock}" Foreground="{Binding StockBrush}" FontWeight="Normal" FontSize="10" Margin="0,10,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+             <TextBlock Text="{Binding Wholesale}" Foreground="#7F9284" FontSize="9" FontWeight="Normal" Margin="0,5,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+           </Grid>
+          </Button>
+         </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ItemsControl x:Name="ProductListItems" ItemsSource="{Binding Tiles}" Visibility="{Binding ListViewVisibility}">
+         <ItemsControl.ItemTemplate><DataTemplate>
+          <Button Style="{StaticResource ProductCardStyle}" Margin="0,0,1,10" HorizontalAlignment="Stretch"
+                  Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                  ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+           <Grid Margin="12,10"><Grid.ColumnDefinitions><ColumnDefinition Width="62"/><ColumnDefinition Width="*"/><ColumnDefinition Width="89"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+            <Border Background="#F1F6EF" CornerRadius="9" Height="66"><Image Source="{Binding Image}" Height="57" Margin="4" Stretch="Uniform"/></Border>
+            <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
+             <TextBlock Text="{Binding Code}" FontSize="8" Foreground="#789480" FontWeight="Normal" TextWrapping="NoWrap"/>
+             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#172B29" Margin="0,3,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+             <TextBlock Text="{Binding Stock}" FontSize="10" Foreground="{Binding StockBrush}" FontWeight="Normal" Margin="0,4,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+             <TextBlock Text="{Binding Wholesale}" FontSize="9" Foreground="#7F9284" FontWeight="Normal" Margin="0,3,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,8,0" VerticalAlignment="Center" HorizontalAlignment="Right"><TextBlock Text="{Binding Price}" FontSize="17" FontWeight="SemiBold" Foreground="#172B29" TextWrapping="NoWrap"/><TextBlock Text="{Binding Unit}" FontSize="10" FontWeight="Normal" Foreground="#819282" Margin="0,2,0,0" TextWrapping="NoWrap"/></StackPanel>
+            <Border Grid.Column="3" Background="#E4F3E6" CornerRadius="17" Width="32" Height="32" VerticalAlignment="Center"><TextBlock Text="+" Foreground="#187B52" FontSize="23" FontWeight="Normal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/></Border>
+           </Grid>
+          </Button>
+         </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel x:Name="ProductEmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="18,35">
+         <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Tiles.Count}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+         <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="30" Foreground="#AFC5B7" HorizontalAlignment="Center"/>
+         <TextBlock Text="Nenhum produto encontrado" FontSize="14" FontWeight="SemiBold" Foreground="#52745B" Margin="0,12,0,5" TextAlignment="Center"/>
+         <TextBlock Text="Tente outro nome, código ou categoria." FontSize="11" Foreground="#829788" TextAlignment="Center"/>
+        </StackPanel>
+       </Grid>
+      </ScrollViewer>
+     </Grid>
+     <Border Grid.Column="2" Style="{StaticResource Card}" CornerRadius="14" Padding="14" BorderBrush="#DFE8E2">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="3*" MinHeight="230"/><RowDefinition Height="2*" MaxHeight="200"/></Grid.RowDefinitions>
+       <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding CartTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#172B29" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Grid.Column="1" Text="{Binding CartCount}" Foreground="#829586" FontSize="10" VerticalAlignment="Center" Margin="8,0"/>
+        <Button Grid.Column="2" Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" Background="White" Foreground="#5D7663" Padding="5" MinHeight="30" Width="30" ToolTip="Limpar venda" Click="ClearCart_Click" AutomationProperties.Name="Limpar venda atual"/>
+       </Grid>
+       <Grid Grid.Row="1" Margin="0,11,0,11"><Grid.ColumnDefinitions><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="17" Foreground="#52745B" Margin="0,0,7,0"/><TextBlock Text="CLIENTE" FontSize="9" Foreground="#789180" VerticalAlignment="Center"/></StackPanel>
+        <ComboBox Grid.Column="1" MinHeight="38" ItemsSource="{Binding CustomerOptions}" DisplayMemberPath="Name" SelectedItem="{Binding CartCustomer}" IsEnabled="{Binding CanEditCart}" AutomationProperties.Name="Cliente da venda"/>
+       </Grid>
+       <Grid x:Name="CartItemsViewport" Grid.Row="2" MinHeight="230">
+        <ScrollViewer x:Name="CartItemsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Produtos da venda atual">
+         <ItemsControl ItemsSource="{Binding Cart}"><ItemsControl.ItemTemplate><DataTemplate>
+          <Border BorderBrush="#E9EFE9" BorderThickness="0,0,0,1" Padding="0,10">
+           <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Background="#F3F7F1" BorderBrush="#E7EEE6" BorderThickness="1" CornerRadius="8" Width="50" Height="62" VerticalAlignment="Top"><Image Source="{Binding Image}" Stretch="Uniform" Margin="4"/></Border>
+            <StackPanel Grid.Column="1" Margin="11,0,0,0">
+             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+              <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#172B29" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+              <Button Grid.Column="1" Content="×" FontSize="15" Padding="3,0" MinHeight="20" Width="22" BorderThickness="0" Background="Transparent" Foreground="#91A493" ToolTip="Remover produto"
+                      Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat=Remover {0}}"/>
+             </Grid>
+             <TextBlock Text="{Binding PriceLabel}" FontSize="10" Foreground="#7F9483" FontWeight="Normal" Margin="0,3,0,7" TextWrapping="NoWrap"/>
+             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <StackPanel Orientation="Horizontal">
+               <Button Content="−" Width="27" Height="27" MinHeight="27" Padding="0" FontSize="13" ToolTip="Diminuir quantidade" Command="{Binding DataContext.DecrementCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat=Diminuir quantidade de {0}}"/>
+               <Border MinWidth="34" Height="27"><TextBlock Text="{Binding QuantityLabel}" TextAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="Normal"/></Border>
+               <Button Content="+" Width="27" Height="27" MinHeight="27" Padding="0" FontSize="13" ToolTip="Aumentar quantidade" Command="{Binding DataContext.IncrementCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name, StringFormat=Aumentar quantidade de {0}}"/>
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=C2}" FontSize="13" FontWeight="SemiBold" Foreground="#172B29" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="6,0,0,0" TextWrapping="NoWrap"/>
+             </Grid>
+            </StackPanel>
+           </Grid>
+          </Border>
+         </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+        </ScrollViewer>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding EmptyCartVisibility}" Margin="12">
+         <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="36" Foreground="#BCD1BD" HorizontalAlignment="Center"/>
+         <TextBlock Text="A próxima venda começa aqui" FontWeight="SemiBold" FontSize="13" Foreground="#638365" TextAlignment="Center" Margin="0,12,0,6"/>
+         <TextBlock Text="Selecione um produto ou leia o código de barras." FontSize="11" Foreground="#8A9F8B" TextAlignment="Center"/>
+        </StackPanel>
+       </Grid>
+       <ScrollViewer x:Name="CartFooterScrollViewer" Grid.Row="3" MaxHeight="200" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Totais e ações da venda">
+        <Border BorderBrush="#E6EEE6" BorderThickness="0,1,0,0" Padding="0,8,0,0"><StackPanel>
+         <Grid Margin="0,0,0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Subtotal" Foreground="#7B927F" FontSize="11"/><TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=C2}" FontSize="11" Foreground="#33503D"/></Grid>
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="Desconto (R$)" FontSize="10" Foreground="#809684" Margin="0,0,0,4"/><TextBox x:Name="CartDiscountInput" Text="{Binding Discount, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditCart}" Padding="8,5" MinHeight="32" FontSize="12" Foreground="#172B29" AutomationProperties.Name="Desconto em reais"/></StackPanel>
+          <StackPanel Grid.Column="2"><TextBlock Text="Entrega (R$)" FontSize="10" Foreground="#809684" Margin="0,0,0,4"/><TextBox x:Name="CartDeliveryInput" Text="{Binding DeliveryFee, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditCart}" Padding="8,5" MinHeight="32" FontSize="12" Foreground="#172B29" AutomationProperties.Name="Taxa de entrega em reais"/></StackPanel>
+         </Grid>
+         <Grid Margin="0,8,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Total" FontSize="18" FontWeight="SemiBold" Foreground="#172B29" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=C2}" FontSize="24" FontWeight="SemiBold" Foreground="#172B29" TextWrapping="NoWrap"/></Grid>
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <Button Style="{StaticResource PrimaryButton}" Padding="9,9" FontSize="11" MinHeight="39" IsEnabled="{Binding CanSell}" Click="Checkout_Click" AutomationProperties.Name="Finalizar venda F4">
+           <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="15" Margin="0,0,7,0" VerticalAlignment="Center"/><TextBlock Text="Finalizar venda · F4" VerticalAlignment="Center"/></StackPanel>
+          </Button>
+          <Button Grid.Column="2" Padding="7,9" FontSize="10" MinHeight="39" IsEnabled="{Binding CanEditCart}" ToolTip="Salvar como pedido" Click="SaveOrder_Click" AutomationProperties.Name="Salvar pedido">
+           <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/><TextBlock Text="Salvar pedido" VerticalAlignment="Center"/></StackPanel>
+          </Button>
+         </Grid>
+         <TextBlock Text="{Binding CartHint}" TextAlignment="Center" FontSize="9" Foreground="#7C9580" Margin="0,6,0,0" TextWrapping="Wrap"/>
+        </StackPanel></Border>
+       </ScrollViewer>
+      </Grid>
+     </Border>
     </Grid>
 
     <Grid Visibility="{Binding Page, Converter={StaticResource PageVisibility}, ConverterParameter=Estoque}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="200"/></Grid.RowDefinitions>
@@ -87,7 +310,25 @@
     <local:FiscalPanel x:Name="FiscalConfigurationPanel" Visibility="{Binding Page, Converter={StaticResource PageVisibility}, ConverterParameter=Fiscal}"/>
     <local:UpdatesPanel x:Name="UpdatesConfigurationPanel" Visibility="{Binding Page, Converter={StaticResource PageVisibility}, ConverterParameter=Atualizações}"/>
    </Grid>
-   <Border Grid.Row="3" BorderBrush="#E2E9DD" BorderThickness="0,1,0,0" Padding="28,0"><DockPanel><TextBlock Text="DADOS LOCAIS  •  SALVAMENTO AUTOMÁTICO" FontSize="9" Foreground="#99A78D" VerticalAlignment="Center"/><TextBlock Text="F2  Buscar produto     F4  Finalizar venda     F5  Atualizar" FontSize="10" Foreground="#8F9D84" HorizontalAlignment="Right" VerticalAlignment="Center"/></DockPanel></Border>
+   <Border x:Name="FooterStatusBar" Grid.Row="3" BorderBrush="#D6E3DA" BorderThickness="0,1,0,0" Padding="28,0">
+    <Grid>
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel x:Name="LocalDataIndicator" Orientation="Horizontal" VerticalAlignment="Center" ToolTip="Os dados são guardados neste computador.">
+      <Ellipse Width="8" Height="8" Fill="#168A31" Margin="0,0,8,0" VerticalAlignment="Center"/>
+      <TextBlock Text="DADOS LOCAIS" FontSize="11" FontWeight="SemiBold" Foreground="#365447" VerticalAlignment="Center"/>
+      <TextBlock Text="•" FontSize="11" Foreground="#718C7C" Margin="10,0" VerticalAlignment="Center"/>
+      <TextBlock Text="SALVAMENTO AUTOMÁTICO" FontSize="11" Foreground="#465F53" VerticalAlignment="Center"/>
+     </StackPanel>
+     <StackPanel x:Name="FooterShortcuts" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+      <Border Background="#EDF3EF" BorderBrush="#D6E3DA" BorderThickness="1" CornerRadius="4" Padding="6,2"><TextBlock Text="F2" FontSize="11" FontWeight="Bold" Foreground="#187B52"/></Border>
+      <TextBlock Text="Buscar produto" FontSize="11" Foreground="#465F53" Margin="6,0,16,0" VerticalAlignment="Center"/>
+      <Border Background="#EDF3EF" BorderBrush="#D6E3DA" BorderThickness="1" CornerRadius="4" Padding="6,2"><TextBlock Text="F4" FontSize="11" FontWeight="Bold" Foreground="#187B52"/></Border>
+      <TextBlock Text="Finalizar venda" FontSize="11" Foreground="#465F53" Margin="6,0,16,0" VerticalAlignment="Center"/>
+      <Border Background="#EDF3EF" BorderBrush="#D6E3DA" BorderThickness="1" CornerRadius="4" Padding="6,2"><TextBlock Text="F5" FontSize="11" FontWeight="Bold" Foreground="#187B52"/></Border>
+      <TextBlock Text="Atualizar" FontSize="11" Foreground="#465F53" Margin="6,0,0,0" VerticalAlignment="Center"/>
+     </StackPanel>
+    </Grid>
+   </Border>
   </Grid>
  </Grid>
 </Window>

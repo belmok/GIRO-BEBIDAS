@@ -1,5 +1,19 @@
 # Controle de versões
 
+## 1.2.0 — 11/10/2026
+
+Frente de caixa redesenhada a partir da referência visual: cabeçalho com ícone, categorias ilustradas, cartões adaptáveis ao tamanho da janela, alternância entre grade e lista, contagem de resultados e mensagem para pesquisa sem resultados. O carrinho apresenta miniaturas dos produtos, controles de quantidade e valores em destaque, com rolagem na janela menor.
+
+Corrigido o recorte do texto digitado: os campos aplicavam o espaço interno duas vezes no host de edição. A pesquisa mantém ícone, texto e atalho em colunas próprias. Os campos de cadastro e de repositório também receberam a correção do espaço duplicado.
+
+O funcionamento das vendas, preços de atacado, pedidos reservados, leitura de códigos e permissões foi preservado. Aplicativo, instalador e desinstalador compartilham a versão 1.2.0.
+
+O indicador de caixa fechado passa a usar fundo vermelho claro, borda suave e texto vermelho; caixa aberto mantém o verde. Desconto e entrega são confirmados e validados antes de abrir o pagamento ou salvar o pedido, incluindo finalização por F4 com o campo ainda em edição.
+
+Rodapé com ponto verde em Dados locais, textos maiores e mais escuros, e atalhos F2, F4 e F5 destacados para facilitar a leitura.
+
+171 verificações de regras aprovadas, compilação sem avisos ou erros e conferência nativa WPF das pesquisas por nome, código e código de barras nas duas visualizações. Enter e F2, imagens do carrinho, bloqueio de pedidos reservados, confirmação de valores em edição, validação de texto inválido e cores do caixa foram verificados com dados isolados. Layout renderizado em janela normal e de 1200 × 760.
+
 ## 1.1.1 — 11/10/2026
 
 Painel de atualizações redesenhado com dois cartões, ícones verdes, versão instalada em destaque, ações organizadas e campo de repositório com opção de mostrar ou ocultar. O conteúdo se adapta à janela menor e permite rolagem.

@@ -21,7 +21,7 @@ public partial class MainWindow : Window
         InitializeComponent(); Vm = new(service); DataContext = Vm;
         Vm.Notify = Notify; Vm.RequestWeight = AddWeighed;
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
-        Loaded += async (_, _) => { ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
+        Loaded += async (_, _) => { ResizeProductCards(); ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
         Closed += (_, _) => UpdatesConfigurationPanel.CloseOperations();
         Closing += Window_Closing;
     }
@@ -40,6 +40,22 @@ public partial class MainWindow : Window
     }
     private void Logout_Click(object sender, RoutedEventArgs e) { ReturnToLogin = true; Close(); }
     private void DismissMessage_Click(object sender, RoutedEventArgs e) => Vm.Message = "";
+    private void ProductGrid_Click(object sender, RoutedEventArgs e) => Vm.IsProductsList = false;
+    private void ProductList_Click(object sender, RoutedEventArgs e) => Vm.IsProductsList = true;
+    private void ProductViewport_SizeChanged(object sender, SizeChangedEventArgs e) => ResizeProductCards();
+    private void ProductViewport_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.ViewportWidthChange != 0) ResizeProductCards();
+    }
+    private void ResizeProductCards()
+    {
+        if (Vm is null || ProductViewport is null) return;
+        double available = ProductViewport.ViewportWidth;
+        if (available <= 0) available = ProductViewport.ActualWidth - 18;
+        if (available <= 0) return;
+        int columns = Math.Max(1, (int)Math.Floor(available / 202));
+        Vm.ProductCardWidth = Math.Max(1, Math.Floor(available / columns) - 12);
+    }
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.F2) { Vm.Page = "PDV"; ProductSearch.Focus(); ProductSearch.SelectAll(); e.Handled = true; }
@@ -121,6 +137,7 @@ public partial class MainWindow : Window
     }
     private void Checkout_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
+        CommitCartAmounts();
         if (!Vm.CanSell) throw new InvalidOperationException("Adicione produtos à venda.");
         if (!Vm.CashIsOpen) { OpenCash_Click(sender, e); if (!Vm.Service.Snapshot.CashSessions.Any(c => c.ClosedAt is null)) return; }
         if (Vm.Discount < 0 || Vm.Discount > Vm.Subtotal || Vm.DeliveryFee < 0) throw new InvalidOperationException("Confira o desconto e a taxa de entrega.");
@@ -153,6 +170,7 @@ public partial class MainWindow : Window
     });
     private void SaveOrder_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
+        CommitCartAmounts();
         if (!Vm.CanSell) throw new InvalidOperationException("Adicione os produtos do pedido no PDV.");
         if (!Vm.CanEditCart) throw new InvalidOperationException("Este pedido já está salvo.");
         if (Vm.CustomerOptions.Count <= 1) throw new InvalidOperationException("Cadastre um cliente antes de salvar um pedido.");
@@ -166,6 +184,15 @@ public partial class MainWindow : Window
         d.Submit = f => Vm.Service.CreateOrder(Vm.Draft(), f.Selected<CustomerChoice>("customer").Id!.Value, f.Checked("delivery"), f.Value("address"), f.Value("notes"), Vm.Discount, Vm.DeliveryFee);
         if (d.ShowDialog() == true) { Vm.ClearCart(); Notify("Pedido salvo. Os produtos estão reservados."); }
     });
+    internal void CommitCartAmounts()
+    {
+        if (!Vm.CanEditCart) return;
+        foreach (var input in new[] { CartDiscountInput, CartDeliveryInput })
+        {
+            input.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+            if (Validation.GetHasError(input)) throw new InvalidOperationException("Informe valores válidos para desconto e entrega.");
+        }
+    }
     private void LoadOrder_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         var order = Require(Vm.SelectedOrder, "um pedido");

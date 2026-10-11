@@ -10,6 +10,15 @@ public sealed class MainViewModel : Observable
     public StoreService Service { get; }
     public ObservableCollection<CartLine> Cart { get; } = [];
     public List<NavItem> Navigation { get; }
+    public List<CategoryChoice> CategoryOptions { get; } =
+    [
+        new("Todos", "M1,1 L7,1 7,7 1,7 Z M11,1 L17,1 17,7 11,7 Z M1,11 L7,11 7,17 1,17 Z M11,11 L17,11 17,17 11,17 Z"),
+        new("Cervejas", "M3,5 L13,5 13,17 3,17 Z M13,7 L16,7 Q18,7 18,10 Q18,13 16,13 L13,13 M3,5 Q1,2 4,2 Q5,0 7,2 Q10,0 12,2 Q15,2 13,5 M6,8 L6,14 M10,8 L10,14"),
+        new("Refrigerantes", "M7,1 L11,1 11,5 Q11,7 13,9 L13,17 5,17 5,9 Q7,7 7,5 Z M5,11 L13,11 M5,14 L13,14"),
+        new("Destilados", "M1,1 L17,1 9,10 Z M9,10 L9,17 M5,17 L13,17 M4,4 L14,4"),
+        new("Água e gelo", "M9,1 C7,5 2,8 2,12 A7,7 0 0 0 16,12 C16,8 11,5 9,1 Z"),
+        new("Outros", "M2,8 A1,1 0 1 0 2,10 A1,1 0 1 0 2,8 M9,8 A1,1 0 1 0 9,10 A1,1 0 1 0 9,8 M16,8 A1,1 0 1 0 16,10 A1,1 0 1 0 16,8")
+    ];
     public string StoreName => Service.Snapshot.Settings.Name;
     public string VersionLabel => $"Versão {typeof(StoreService).Assembly.GetName().Version!.ToString(3)} • Windows";
     public string OperatorName => Service.CurrentUser?.Name ?? "";
@@ -24,7 +33,9 @@ public sealed class MainViewModel : Observable
     public decimal Subtotal => Cart.Sum(l => l.Total);
     public decimal Total => Subtotal - Discount + DeliveryFee;
     public string CashStatus => Snapshot.CashSessions.Any(c => c.ClosedAt is null) ? "Caixa aberto" : "Caixa fechado";
-    public string ProductCount => $"{Tiles.Count} produtos encontrados";
+    public string ProductCount => $"{Tiles.Count} produto{(Tiles.Count == 1 ? " encontrado" : "s encontrados")}";
+    public string GridViewVisibility => IsProductsList ? "Collapsed" : "Visible";
+    public string ListViewVisibility => IsProductsList ? "Visible" : "Collapsed";
     public string CartHint => ActiveOrderId is null ? "O preço de atacado é aplicado automaticamente." : "Os produtos e preços deste pedido estão reservados.";
     public string EmptyCartVisibility => Cart.Count == 0 ? "Visible" : "Collapsed";
     public Guid? ActiveOrderId { get; private set; }
@@ -78,6 +89,8 @@ public sealed class MainViewModel : Observable
     public ScaleProfile? SelectedScale { get; set; }
     private string page = "PDV", search = "", category = "Todos", stockSearch = "", clientSearch = "", reportPeriod = "Últimos 30 dias", message = "";
     private decimal discount, deliveryFee;
+    private bool isProductsList;
+    private double productCardWidth = 194;
     private CustomerChoice? cartCustomer;
     public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value == "Fiscal" && IsAdmin) BuildFiscalChecks(); } } }
     public string Search { get => search; set { if (Set(ref search, value)) FilterProducts(); } }
@@ -86,6 +99,8 @@ public sealed class MainViewModel : Observable
     public string Category { get => category; set { if (Set(ref category, value)) FilterProducts(); } }
     public string ReportPeriod { get => reportPeriod; set { if (Set(ref reportPeriod, value)) BuildReport(); } }
     public string Message { get => message; set => Set(ref message, value); }
+    public bool IsProductsList { get => isProductsList; set { if (Set(ref isProductsList, value)) { Changed(nameof(GridViewVisibility)); Changed(nameof(ListViewVisibility)); } } }
+    public double ProductCardWidth { get => productCardWidth; set => Set(ref productCardWidth, value); }
     public decimal Discount { get => discount; set { if (Set(ref discount, value)) Changed(nameof(Total)); } }
     public decimal DeliveryFee { get => deliveryFee; set { if (Set(ref deliveryFee, value)) Changed(nameof(Total)); } }
     public CustomerChoice? CartCustomer { get => cartCustomer; set => Set(ref cartCustomer, value); }

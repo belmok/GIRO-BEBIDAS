@@ -67,7 +67,7 @@
                  ToolTip="Informe usuário/projeto ou o endereço público do repositório no GitHub.">
          <TextBox.Template><ControlTemplate TargetType="TextBox">
           <Grid>
-           <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+           <ScrollViewer x:Name="PART_ContentHost"/>
            <TextBlock x:Name="RepositoryPlaceholder" Text="usuario/projeto" Foreground="#9CA999" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
           </Grid>
           <ControlTemplate.Triggers><Trigger Property="Text" Value=""><Setter TargetName="RepositoryPlaceholder" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>

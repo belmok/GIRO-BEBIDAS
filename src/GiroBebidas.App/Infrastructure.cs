@@ -31,6 +31,7 @@ public sealed class PageVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 public record NavItem(string Key, string Title, string Icon);
+public record CategoryChoice(string Name, string Icon);
 public class ProductTile
 {
     public Product Product { get; }
@@ -49,6 +50,7 @@ public sealed class CartLine(Product product, decimal quantity, decimal? fixedPr
 {
     private decimal quantity = quantity;
     public Product Product { get; } = product;
+    public ImageSource Image { get; } = PhotoTools.Decode(product.PhotoBase64) ?? BeverageArt.Create(product);
     public string Name => Product.Name;
     public decimal Quantity { get => quantity; set { if (Set(ref quantity, value)) { Changed(nameof(QuantityLabel)); Changed(nameof(UnitPrice)); Changed(nameof(Total)); Changed(nameof(PriceLabel)); } } }
     public decimal UnitPrice => fixedPrice ?? Product.UnitPrice(Quantity);
