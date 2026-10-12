@@ -112,7 +112,7 @@ public static class SmokeRunner
         ContextMenu? openedMenu = null;
         FormDialog? duplicate = null, details = null;
         Window? history = null;
-        var unused = new Product { Name = "Produto de teste do estoque", Code = "UI-STOCK-" + Guid.NewGuid().ToString("N")[..6].Replace('0', 'G'), Price = 10, Stock = 0, MinimumStock = 0, Category = "Outros" };
+        var unused = new Product { Name = "Produto de teste do estoque", Code = "UI-STOCK-" + Guid.NewGuid().ToString("N")[..6].Replace('0', 'G'), Price = 10, Stock = 0, MinimumStock = 0, Category = "Sem álcool especial" };
         vm.Service.SaveProduct(unused);
         var probe = vm.Service.Snapshot.Products.Single(p => p.Code == "005" && p.Active && !p.IsWeighed);
         var photoProduct = vm.Service.Snapshot.Products.First(p => p.PhotoBase64.Length > 0);
@@ -242,6 +242,40 @@ public static class SmokeRunner
             if (openedMenu!.IsOpen || !vm.Snapshot.Products.Single(p => p.Id == unused.Id).Active || vm.StockRows.Single(r => r.Product.Id == unused.Id).Status != "Sem estoque")
                 throw new InvalidOperationException("Ativar no menu precisa restaurar o cadastro e mostrar seu estoque atual.");
 
+            foreach (string category in new[] { unused.Category, "cervejas" })
+            {
+                var customProduct = vm.Service.Snapshot.Products.Single(p => p.Id == unused.Id);
+                customProduct.Category = category; vm.Service.SaveProduct(customProduct); vm.Refresh();
+                var customEdit = window.CreateProductDialog(customProduct, true); customEdit.Owner = null;
+                try
+                {
+                    if (customEdit.Value("category") != category)
+                        throw new InvalidOperationException($"Editar precisa carregar a categoria exata '{category}', incluindo categorias personalizadas e variações de maiúsculas.");
+                    customEdit.Submit?.Invoke(customEdit);
+                    if (vm.Service.Snapshot.Products.Single(p => p.Id == unused.Id).Category != category)
+                        throw new InvalidOperationException($"Salvar a edição precisa preservar a categoria '{category}' sem substituí-la por uma opção padrão.");
+                }
+                finally { customEdit.Close(); }
+
+                var customCopy = window.CreateDuplicateProductDialog(vm.Service.Snapshot.Products.Single(p => p.Id == unused.Id)); customCopy.Owner = null;
+                try
+                {
+                    int countBeforeCustomCopy = vm.Service.Snapshot.Products.Count;
+                    string customCopyCode = customCopy.Value("code");
+                    if (customCopy.Value("category") != category || customCopy.Decimal("stock") != 0 || customCopy.Value("barcode") != "" ||
+                        vm.Service.Snapshot.Products.Any(p => p.Code == customCopyCode))
+                        throw new InvalidOperationException($"Duplicar precisa preparar um cadastro independente com a categoria exata '{category}'.");
+                    customCopy.Submit?.Invoke(customCopy);
+                    var customSaved = vm.Service.Snapshot.Products.Single(p => p.Code == customCopyCode);
+                    if (vm.Service.Snapshot.Products.Count != countBeforeCustomCopy + 1 || customSaved.Id == unused.Id || customSaved.Category != category ||
+                        vm.Service.Snapshot.Products.Single(p => p.Id == unused.Id).Category != category)
+                        throw new InvalidOperationException($"Salvar a duplicação precisa manter a categoria '{category}' na cópia e na origem.");
+                }
+                finally { customCopy.Close(); }
+            }
+            var restoredCustomProduct = vm.Service.Snapshot.Products.Single(p => p.Id == unused.Id);
+            restoredCustomProduct.Category = unused.Category; vm.Service.SaveProduct(restoredCustomProduct); vm.Refresh();
+
             string sourceBefore = System.Text.Json.JsonSerializer.Serialize(photoProduct, JsonStore.JsonOptions);
             int countBefore = vm.Service.Snapshot.Products.Count;
             duplicate = window.CreateDuplicateProductDialog(photoProduct); duplicate.Owner = null; duplicate.SizeToContent = SizeToContent.Manual; duplicate.Height = Math.Min(800, duplicate.MaxHeight);
@@ -286,7 +320,7 @@ public static class SmokeRunner
             vm.Refresh(); vm.SelectedStock = vm.StockRows.FirstOrDefault(r => r.Product.Id == originalSelected);
             vm.Page = originalPage; vm.Message = originalMessage; window.Width = originalWidth; window.Height = originalHeight; FlushLayout(window);
         }
-        File.AppendAllText(Path.Combine(output, "estoque-smoke-ok.txt"), "Busca nativa por nome, código, barras e categoria; filtros e ordenação nos dois sentidos; fotos e movimentações com sinais e cores; layout 1200 x 760; menus por linha com exclusão protegida; ativação e desativação persistidas; cópia independente com foto e tributação; detalhes e histórico completo conferidos.\n");
+        File.AppendAllText(Path.Combine(output, "estoque-smoke-ok.txt"), "Busca nativa por nome, código, barras e categoria; filtros e ordenação nos dois sentidos; fotos e movimentações com sinais e cores; layout 1200 x 760; menus por linha com exclusão protegida; ativação e desativação persistidas; edição e duplicação salvas preservando categoria personalizada e variante minúscula; cópia independente com foto e tributação; detalhes e histórico completo conferidos.\n");
     }
     private static void CheckProductUi(MainWindow window, string output)
     {

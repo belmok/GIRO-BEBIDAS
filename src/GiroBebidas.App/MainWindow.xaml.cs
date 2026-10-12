@@ -236,7 +236,9 @@ public partial class MainWindow : Window
         d.Action("Remover foto", () => { photo = ""; image.Source = BeverageArt.Create(p); });
         d.Text("name", "Nome do produto", p.Name); d.Text("description", "Descrição", p.Description, true);
         d.Text("code", "Código / SKU", editing || p.Code.Length > 0 ? p.Code : NextProductCode()); d.Text("barcode", "Código de barras", p.Barcode);
-        d.Choice("category", "Categoria", new[] { "Cervejas", "Refrigerantes", "Destilados", "Água e gelo", "Outros" }, p.Category, editable: true);
+        var categories = new[] { "Cervejas", "Refrigerantes", "Destilados", "Água e gelo", "Outros" }.Append(p.Category)
+            .Concat(Vm.Service.Snapshot.Products.Select(product => product.Category)).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal);
+        d.Choice("category", "Categoria", categories, p.Category, editable: true);
         d.Choice("unit", "Unidade de venda", new[] { "un", "cx", "kg" }, p.Unit);
         d.Choice("package", "Ilustração quando não houver foto", new[] { "Lata", "Garrafa", "Pacote", "Caixa" }, p.Package);
         d.Number("cost", "Custo unitário (R$)", p.Cost); d.Number("price", "Preço de venda (R$)", p.Price);

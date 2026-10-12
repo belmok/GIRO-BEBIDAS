@@ -4,7 +4,7 @@
 
 Produtos e estoque redesenhado com miniaturas, categorias e situações coloridas, filtros por categoria, busca por nome/código/barras/categoria e ordenação pelo seletor, botão de direção ou cabeçalho. Os totais físico, reservado e livre permanecem separados. O cartão inferior exibe as cinco movimentações mais recentes, com entradas e saídas diferenciadas, e abre o histórico completo.
 
-Menu por produto com detalhes, duplicar, ativar/desativar e excluir. Duplicar abre um cadastro para conferência, mantendo foto, descrição, valores e dados fiscais, com nova identificação, código sugerido livre, código de barras vazio e estoque zero. A exclusão é restrita a cadastros sem estoque e sem histórico de vendas, pedidos ou movimentos; registros cancelados continuam protegidos. Desativação preserva o cadastro e é bloqueada quando há reservas. Ações exigem administrador e ficam registradas na auditoria.
+Menu por produto com detalhes, duplicar, ativar/desativar e excluir. Duplicar abre um cadastro para conferência, mantendo foto, descrição, categoria personalizada, valores e dados fiscais, com nova identificação, código sugerido livre, código de barras vazio e estoque zero. A exclusão é restrita a cadastros sem estoque e sem histórico de vendas, pedidos ou movimentos; registros cancelados continuam protegidos. Desativação preserva o cadastro e é bloqueada quando há reservas. Ações exigem administrador e ficam registradas na auditoria.
 
 273 verificações de regras, permissões e persistência aprovadas, incluindo rejeições sem alteração dos dados. Aplicativo, instalador e desinstalador usam a versão 1.4.0.
 
