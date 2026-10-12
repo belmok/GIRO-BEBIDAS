@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.8.0 — 12/10/2026
+
+Configurações redesenhadas com campos ilustrados, interruptores e cartão de backup com arte de nuvem. Cupom fiscal e NFC-e fica na mesma página; o atalho do menu leva diretamente à seção. Conferência com tabela de itens e indicadores verde/âmbar, mantendo os cadastros fiscais e o aviso de validação local. Detalhes do caixa organizados em abertura, vendas e fechamento, com situação e diferença destacadas por cor.
+
+Salvamento inclui o último campo em foco. Restauração exige caixa fechado e venda vazia antes de escolher o arquivo. Rolagem da lista de operações não move a página externa. Textos longos, valores e ações conferidos na janela menor.
+
+273 verificações de negócio e 47 de notas/publicação aprovadas. Testes nativos de configurações, recuperação, permissões, parâmetros fiscais, cancelamento e valores dos detalhes do caixa em dados isolados. Aplicativo empacotado, instalador e desinstalador conferidos antes da publicação.
+
 ## 1.7.0 — 12/10/2026
 
 Janelas de detalhes de produtos e pedidos redesenhadas com cartões, preços e totais destacados, foto e dados organizados, botão único de fechar e rolagem controlada. Confirmação de limpar a venda usa o padrão visual do Giro Bebidas e mantém Cancelar como escolha padrão. Formulários de finalização da venda, fechamento de caixa e demais cadastros recebem cabeçalho, cartões de resumo, maior contraste e rodapé fixo.

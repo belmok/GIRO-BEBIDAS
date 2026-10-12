@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.7.0
+# Guia do Giro Bebidas — versão 1.8.0
 
 ## Instalação e primeiro acesso
 
@@ -90,7 +90,7 @@ Esse recurso precisa ser compatível com o protocolo real da balança. USB só f
 
 ## Configuração do cupom fiscal
 
-O administrador encontra a tela **Cupom fiscal** no menu. Ela prepara os parâmetros de **NFC-e, modelo 65**. A emissão ainda depende de integração com um emissor SEFAZ; preencher esta tela não transforma o comprovante atual em documento fiscal.
+O administrador encontra **Cupom fiscal e NFC-e** na mesma tela de **Configurações**, abaixo de backup e recuperação. O acesso **Cupom fiscal** no menu leva diretamente a essa seção. Ela prepara os parâmetros de **NFC-e, modelo 65**. A emissão ainda depende de integração com um emissor SEFAZ; preencher esta tela não transforma o comprovante atual em documento fiscal.
 
 1. Em **Dados da empresa**, informe razão social, nome fantasia, CNPJ, inscrição estadual, regime tributário (CRT), UF, município, código IBGE e endereço. O cadastro aceita CNPJ numérico e alfanumérico e confere os dígitos verificadores. É possível salvar um cadastro parcial.
 2. Em **Configurar NFC-e**, escolha homologação ou produção, série, próximo número, identificação do caixa e uma impressora cadastrada em **Equipamentos**. Cada ambiente mantém sua própria série e numeração. Vendas não fiscais não consomem esses números.
@@ -105,9 +105,11 @@ A referência enviada descreve SAT/MFE (CF-e modelo 59). Esta versão concentra 
 
 ## Backup
 
+Em **Configurações**, os dados do depósito ficam em campos com ícones. Use os interruptores verdes para ativar a impressão automática e o backup diário; cinza indica desativado. Clique **Salvar configurações** para gravar as alterações. A seção **Backup e recuperação** reúne criar, restaurar e abrir a pasta de dados.
+
 Abra **Configurações → Criar backup** e salve o arquivo em outra unidade ou na nuvem. O backup inclui produtos, fotos, usuários, clientes, pedidos, caixa, vendas e configuração fiscal, com certificado e CSC protegidos pelo Windows. Também existe uma cópia diária automática na pasta `Backups` e uma cópia `.bak` da gravação anterior.
 
-Para recuperar, feche o caixa, limpe a venda atual e escolha **Restaurar backup**. Confirme o arquivo. O sistema valida a versão, preserva uma cópia dos dados atuais e pede novo login. Os usuários e senhas voltam ao estado do backup restaurado. Os backups têm dados pessoais e devem ser guardados em local de acesso restrito.
+Para recuperar, feche o caixa, limpe ou salve a venda atual e escolha **Restaurar backup**. O botão fica desativado enquanto o caixa estiver aberto ou houver produtos na venda. Confirme o arquivo. O sistema valida a versão, preserva uma cópia dos dados atuais e pede novo login. Os usuários e senhas voltam ao estado do backup restaurado. Os backups têm dados pessoais e devem ser guardados em local de acesso restrito.
 
 ## Atualizações do GitHub
 

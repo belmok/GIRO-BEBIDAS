@@ -85,6 +85,7 @@ public sealed class MainViewModel : Observable
     public CashSummary? CashSummary { get; private set; }
     public bool CashIsOpen => Snapshot.CashSessions.Any(c => c.ClosedAt is null);
     public bool CashCanOpen => !CashIsOpen;
+    public bool CanRestoreSettingsBackup => IsAdmin && !CashIsOpen && Cart.Count == 0;
     public string CashOpenedLabel => Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null) is { } c ? $"Aberto por {c.OpenedBy}, em {c.OpenedAt:dd/MM 'às' HH:mm}" : "Abra um caixa para começar a registrar vendas.";
     public string PrinterDefaultLabel => Snapshot.Printers.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultPrinterId)?.Name ?? "Nenhuma impressora padrão";
     public string ScaleDefaultLabel => Snapshot.Scales.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultScaleId)?.Name ?? "Pesagem manual";
@@ -134,7 +135,7 @@ public sealed class MainViewModel : Observable
     private bool isProductsList;
     private double productCardWidth = 194;
     private CustomerChoice? cartCustomer;
-    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value == "Fiscal" && IsAdmin) BuildFiscalChecks(); } } }
+    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value is "Fiscal" or "Configurações" && IsAdmin) BuildFiscalChecks(); } } }
     public string Search { get => search; set { if (Set(ref search, value)) FilterProducts(); } }
     public string StockSearch { get => stockSearch; set { if (Set(ref stockSearch, value)) FilterStock(); } }
     public string StockCategory { get => stockCategory; set { if (Set(ref stockCategory, value)) FilterStock(); } }
@@ -197,6 +198,7 @@ public sealed class MainViewModel : Observable
     }
     private void CartChanged()
     {
+        Changed(nameof(CanRestoreSettingsBackup));
         foreach (string property in new[] { nameof(Subtotal), nameof(Total), nameof(CanSell), nameof(CartCount), nameof(EmptyCartVisibility), nameof(CanEditCart), nameof(CartTitle), nameof(CartHint) }) Changed(property);
         CommandManager.InvalidateRequerySuggested();
     }
@@ -297,7 +299,7 @@ public sealed class MainViewModel : Observable
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
-        FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
+        FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page is "Fiscal" or "Configurações" && IsAdmin) BuildFiscalChecks();
         foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }

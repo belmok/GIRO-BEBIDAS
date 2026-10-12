@@ -33,19 +33,13 @@ public partial class MainWindow
         catch (Exception ex) { Notify(ex.Message); }
     }
     private void CashDetails_Click(object sender, RoutedEventArgs e) => Guard(() => CreateCashDetailsDialog(CashRow(sender)).ShowDialog());
-    internal FormDialog CreateCashDetailsDialog(CashSession selected)
+    internal CashDetailsWindow CreateCashDetailsDialog(CashSession selected)
     {
         if (Vm.Service.CurrentUser is null) throw new UnauthorizedAccessException("Entre novamente no sistema.");
         var state = Vm.Service.Snapshot;
         var cash = state.CashSessions.FirstOrDefault(c => c.Id == selected.Id) ?? throw new InvalidOperationException("Caixa não encontrado.");
         var totals = StoreService.SummarizeCash(state, cash.Id);
-        var dialog = new FormDialog(this, "Detalhes do caixa", $"Abertura em {cash.OpenedAt:dd/MM/yyyy HH:mm} • {cash.StatusLabel}", "Fechar");
-        dialog.Info($"Responsável pela abertura: {cash.OpenedBy}\nFundo de troco: {totals.Opening:C2}\nDinheiro recebido: {totals.CashSales:C2}\nSuprimentos: {totals.Supplies:C2}\nSangrias: {totals.Withdrawals:C2}\nDinheiro esperado: {totals.Expected:C2}");
-        dialog.Info($"Pix: {totals.Pix:C2}\nCartão de débito: {totals.Debit:C2}\nCartão de crédito: {totals.Credit:C2}\nVendas em fiado: {totals.CreditSales:C2}\nVendas realizadas: {totals.SaleCount}\nTotal de vendas: {totals.TotalSales:C2}");
-        if (cash.ClosedAt is { } closed)
-            dialog.Info($"Fechamento: {closed:dd/MM/yyyy HH:mm} • {cash.ClosedBy}\nDinheiro contado: {cash.CountedCash:C2}\nDiferença: {cash.Difference:C2}\n{(cash.ClosingNotes.Length > 0 ? cash.ClosingNotes : "Sem observações do fechamento.")}");
-        else dialog.Info("Caixa em aberto. O dinheiro contado e a diferença estarão disponíveis após o fechamento.");
-        return dialog;
+        return new CashDetailsWindow(this, cash, totals);
     }
     private void CashRowPrint_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {

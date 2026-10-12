@@ -22,7 +22,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent(); Vm = new(service); DataContext = Vm;
         Vm.Notify = Notify; Vm.RequestWeight = AddWeighed;
-        Vm.PropertyChanged += (_, args) => { if (args.PropertyName is nameof(MainViewModel.StockSort) or nameof(MainViewModel.StockSortDescending)) UpdateStockSortHeaders(); };
+        Vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(MainViewModel.StockSort) or nameof(MainViewModel.StockSortDescending)) UpdateStockSortHeaders();
+            if (args.PropertyName == nameof(MainViewModel.Page)) Dispatcher.InvokeAsync(() =>
+            {
+                if (Vm.Page == "Fiscal") FiscalConfigurationPanel.BringIntoView();
+                else if (Vm.Page == "Configurações") SettingsScroll.ScrollToTop();
+            }, DispatcherPriority.Loaded);
+        };
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
         Loaded += async (_, _) => { ResizeProductCards(); UpdateStockSortHeaders(); ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
         Closed += (_, _) => UpdatesConfigurationPanel.CloseOperations();
@@ -537,7 +545,9 @@ public partial class MainWindow : Window
     });
     private void Restore_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
         if (Vm.Cart.Count > 0) throw new InvalidOperationException("Limpe ou salve a venda atual antes de restaurar.");
+        if (Vm.Service.Snapshot.CashSessions.Any(c => c.ClosedAt is null)) throw new InvalidOperationException("Feche o caixa antes de restaurar um backup.");
         var file = new OpenFileDialog { Title = "Restaurar backup", Filter = "Backup Giro Bebidas|*.json" };
         if (file.ShowDialog(this) != true || !Confirm("Restaurar este backup e substituir os dados atuais? Uma cópia dos dados atuais será preservada. Você precisará entrar novamente.")) return;
         Vm.Service.RestoreBackup(file.FileName); ReturnToLogin = true; Close();

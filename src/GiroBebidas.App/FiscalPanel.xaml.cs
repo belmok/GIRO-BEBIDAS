@@ -107,6 +107,13 @@ public partial class FiscalPanel : UserControl
     internal void ShowChecks() { UpdateLayout(); ChecksCard.BringIntoView(); }
     private void Check_Click(object sender, RoutedEventArgs e)
     {
-        Run(() => { }, "Conferência local atualizada. A autorização SEFAZ continua pendente de integração."); ShowChecks();
+        try
+        {
+            if (!Vm.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+            Vm.BuildFiscalChecks();
+            Vm.Notify?.Invoke("Conferência local atualizada. A autorização SEFAZ continua pendente de integração.");
+            ShowChecks();
+        }
+        catch (Exception ex) { Vm.Notify?.Invoke(ex.Message); }
     }
 }

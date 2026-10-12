@@ -39,6 +39,11 @@ public static class ControlledScrolling
         if (sender is not FrameworkElement area || e.Handled || e.Delta == 0) return;
         // A popup has a separate visual tree even when logically owned by a row.
         if (e.OriginalSource is Visual source && !ReferenceEquals(source, area) && !area.IsAncestorOf(source)) return;
+        if (e.OriginalSource is Visual wheelSource)
+        {
+            for (DependencyObject? parent = wheelSource; parent is not null && !ReferenceEquals(parent, area); parent = VisualTreeHelper.GetParent(parent))
+                if (parent is FrameworkElement nested && GetIsEnabled(nested)) return;
+        }
         if (GetScrollViewer(area) is null) return;
         if (SystemParameters.WheelScrollLines != 0) ScrollArea(area, e.Delta);
         e.Handled = true;
