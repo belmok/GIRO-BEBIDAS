@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.3.0
+# Guia do Giro Bebidas — versão 1.4.0
 
 ## Instalação e primeiro acesso
 
@@ -21,6 +21,14 @@ Abra **Produtos e estoque → Novo produto**. Escolha a foto do computador nos f
 Use unidade **kg** para vender por peso. **un** e **cx** exigem quantidades inteiras. Um produto cadastrado como caixa tem seu próprio estoque em caixas; a versão atual não converte automaticamente caixas em unidades. Deixe preço e quantidade de atacado em zero para desativar o atacado. O preço de atacado entra automaticamente quando a quantidade da venda atinge o mínimo.
 
 Depois do cadastro, alterações de quantidade são feitas por **Entrada / ajuste**. Informe quantidade, custo e motivo ou fornecedor. Ajustes não podem consumir produtos reservados em pedidos. Desative produtos para retirá-los da venda sem apagar o histórico.
+
+Em **Produtos e estoque**, a busca aceita nome, código, código de barras ou categoria. Use o filtro de categoria e a ordenação por nome, código, quantidades, preço ou situação. O botão de setas inverte a ordem; clicar no cabeçalho também ordena a tabela. As fotos, categorias e indicadores ajudam a identificar os produtos. **Físico** é a quantidade total; **Reservado** pertence aos pedidos; **Livre** é o que pode ser vendido.
+
+Na coluna **Ações**, o lápis edita o produto. O menu de três pontos permite ver detalhes, duplicar, ativar/desativar e excluir. A duplicação abre um novo cadastro com foto, descrição e preços copiados, código diferente, código de barras vazio e estoque inicial zero; confira os dados antes de salvar. Desativar preserva estoque e histórico e retira o produto do PDV. Produtos reservados em pedidos precisam continuar ativos.
+
+A exclusão exige confirmação e só é permitida quando o produto não possui estoque, reserva, vendas, pedidos ou movimentações. Produtos já utilizados devem ser desativados para preservar os registros, incluindo operações canceladas. Essas ações são restritas ao administrador.
+
+O cartão **Últimas movimentações** mostra os cinco registros mais recentes, com entradas em verde e saídas em vermelho. **Ver todas** abre o histórico completo de movimentações.
 
 ## Abrir o caixa e vender
 

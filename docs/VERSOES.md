@@ -1,5 +1,15 @@
 # Controle de versões
 
+## 1.4.0 — 12/10/2026
+
+Produtos e estoque redesenhado com miniaturas, categorias e situações coloridas, filtros por categoria, busca por nome/código/barras/categoria e ordenação pelo seletor, botão de direção ou cabeçalho. Os totais físico, reservado e livre permanecem separados. O cartão inferior exibe as cinco movimentações mais recentes, com entradas e saídas diferenciadas, e abre o histórico completo.
+
+Menu por produto com detalhes, duplicar, ativar/desativar e excluir. Duplicar abre um cadastro para conferência, mantendo foto, descrição, valores e dados fiscais, com nova identificação, código sugerido livre, código de barras vazio e estoque zero. A exclusão é restrita a cadastros sem estoque e sem histórico de vendas, pedidos ou movimentos; registros cancelados continuam protegidos. Desativação preserva o cadastro e é bloqueada quando há reservas. Ações exigem administrador e ficam registradas na auditoria.
+
+273 verificações de regras, permissões e persistência aprovadas, incluindo rejeições sem alteração dos dados. Aplicativo, instalador e desinstalador usam a versão 1.4.0.
+
+Conferência nativa WPF aprovada para busca, filtros, ordenação crescente/decrescente, miniaturas, sinais e cores das movimentações, menu por linha, ativação persistida, duplicação independente, detalhes e histórico completo. Layout renderizado em janela normal e de 1200 × 760. Nenhum dado real do depósito foi alterado durante os testes.
+
 ## 1.3.0 — 11/10/2026
 
 Indicador de caixa transformado em botão com seta e menu arredondado. A ação principal alterna entre Abrir caixa e Fechar caixa conforme a situação atual. Histórico de caixas leva diretamente à tabela de aberturas e fechamentos; Configurações do caixa permite ao administrador ajustar o fundo de troco sugerido e a impressão automática dos cupons.

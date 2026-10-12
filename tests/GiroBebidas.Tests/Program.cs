@@ -224,6 +224,7 @@ try
     separate.RestoreBackup(legacyUpdatesBackup); separate.Login("ADMIN", "ADMIN");
     Equal("belmok/GIRO-BEBIDAS", separate.Snapshot.Settings.GitHubUpdates.Repository, "Backup antigo recebe origem padrão de atualizações");
     GiroBebidas.Tests.CashSettingsChecks.Run(root, Check);
+    GiroBebidas.Tests.ProductActionsChecks.Run(root, Check);
     Console.WriteLine($"\n{checks} verificações aprovadas. Dados de teste: {root}"); return 0;
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

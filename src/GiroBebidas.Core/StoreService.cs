@@ -135,6 +135,39 @@ public sealed partial class StoreService(JsonStore store)
             return 0;
         });
     }
+    public void SetProductActive(Guid id, bool active)
+    {
+        Store.Update(s =>
+        {
+            var actor = Actor(s, true);
+            var product = s.Products.FirstOrDefault(p => p.Id == id) ?? throw new InvalidOperationException("Produto não encontrado.");
+            if (!active && Reserved(s, id) > 0) throw new InvalidOperationException("Produto reservado em pedido: mantenha ativo.");
+            product.Active = active;
+            Log(s, actor, $"Produto {(active ? "ativado" : "desativado")}: {product.Code}");
+            return 0;
+        });
+    }
+    public static bool CanDeleteProduct(StoreState s, Guid id)
+    {
+        var product = s.Products.FirstOrDefault(p => p.Id == id);
+        return product is not null && product.Stock == 0 && Reserved(s, id) == 0
+            && !s.Sales.Any(sale => sale.Lines.Any(line => line.ProductId == id))
+            && !s.Orders.Any(order => order.Lines.Any(line => line.ProductId == id))
+            && !s.StockMovements.Any(movement => movement.ProductId == id);
+    }
+    public void DeleteProduct(Guid id)
+    {
+        Store.Update(s =>
+        {
+            var actor = Actor(s, true);
+            var product = s.Products.FirstOrDefault(p => p.Id == id) ?? throw new InvalidOperationException("Produto não encontrado.");
+            if (!CanDeleteProduct(s, id))
+                throw new InvalidOperationException("Só é possível excluir produtos sem estoque, reservas ou histórico. Desative o produto para preservar os registros.");
+            s.Products.Remove(product);
+            Log(s, actor, $"Produto excluído: {product.Code} • {product.Name}");
+            return 0;
+        });
+    }
     private static void StockLog(StoreState s, UserAccount actor, Product p, decimal quantity, string reason)
         => s.StockMovements.Add(new() { ProductId = p.Id, ProductName = p.Name, Quantity = quantity, Reason = reason, UserName = actor.Username });
     public void AdjustStock(Guid id, decimal delta, string reason, decimal? newCost = null)

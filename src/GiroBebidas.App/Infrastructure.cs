@@ -63,12 +63,31 @@ public record CustomerRow(Customer Customer, decimal Balance)
     public string Name => Customer.Name; public string Phone => Customer.Phone; public string Address => Customer.Address;
     public decimal Limit => Customer.CreditLimit; public string Document => Customer.Document;
 }
-public record StockRow(Product Product, decimal Reserved)
+public record StockRow(Product Product, decimal Reserved, bool CanDelete = false)
 {
+    private ImageSource? image;
+    public ImageSource Image => image ??= PhotoTools.Decode(Product.PhotoBase64) ?? BeverageArt.Create(Product);
     public string Name => Product.Name; public string Code => Product.Code; public string Category => Product.Category;
     public decimal Stock => Product.Stock; public decimal Available => Stock - Reserved;
     public decimal Price => Product.Price; public decimal Cost => Product.Cost; public string Unit => Product.Unit;
     public string Status => !Product.Active ? "Inativo" : Available <= 0 ? "Sem estoque" : Available <= Product.MinimumStock ? "Estoque baixo" : "Disponível";
+    public string ToggleActiveLabel => Product.Active ? "Desativar produto" : "Ativar produto";
+    public string DeleteHint => CanDelete ? "Excluir produto sem estoque e sem histórico." : "Este produto possui estoque ou histórico. Desative para preservar os registros.";
+    public string CategoryBackground => Category switch { "Cervejas" => "#FFF1CF", "Refrigerantes" => "#E0F0FE", "Destilados" => "#EEE6FA", "Água e gelo" => "#DFF2EC", _ => "#EEF1F0" };
+    public string CategoryForeground => Category switch { "Cervejas" => "#805E1B", "Refrigerantes" => "#276599", "Destilados" => "#76569E", "Água e gelo" => "#28785C", _ => "#5C7265" };
+    public string StatusBackground => Status switch { "Disponível" => "#E3F5E7", "Estoque baixo" => "#FFF1D8", "Sem estoque" => "#FFF0ED", _ => "#EEF1F0" };
+    public string StatusForeground => Status switch { "Disponível" => "#187B52", "Estoque baixo" => "#906617", "Sem estoque" => "#B4483E", _ => "#6B7C72" };
+    public string StatusDot => StatusForeground;
+}
+public record StockMovementRow(StockMovement Movement)
+{
+    public DateTimeOffset Date => Movement.Date;
+    public string ProductName => Movement.ProductName;
+    public decimal Quantity => Movement.Quantity;
+    public string QuantityLabel => Quantity.ToString("+0.###;-0.###;0");
+    public int Sign => Math.Sign(Quantity);
+    public string Reason => Movement.Reason;
+    public string UserName => Movement.UserName;
 }
 
 public static class BeverageArt

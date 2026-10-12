@@ -46,6 +46,12 @@ public sealed class MainViewModel : Observable
     public StoreState Snapshot { get; private set; } = new();
     public List<ProductTile> Tiles { get; private set; } = [];
     public List<StockRow> StockRows { get; private set; } = [];
+    public List<string> StockCategories { get; private set; } = ["Todas as categorias"];
+    public List<string> StockSortOptions { get; } = ["Nome do produto", "Código", "Categoria", "Estoque físico", "Estoque reservado", "Estoque livre", "Unidade", "Preço de venda", "Situação"];
+    public List<StockMovementRow> RecentStockMovements { get; private set; } = [];
+    public string StockCount => $"{StockRows.Count} produto{(StockRows.Count == 1 ? " encontrado" : "s encontrados")}";
+    public string StockEmptyVisibility => StockRows.Count == 0 ? "Visible" : "Collapsed";
+    public string StockSortDirectionLabel => StockSortDescending ? "Ordem decrescente" : "Ordem crescente";
     public List<CustomerRow> CustomerRows { get; private set; } = [];
     public List<CustomerChoice> CustomerOptions { get; private set; } = [];
     public List<Order> Orders { get; private set; } = [];
@@ -89,6 +95,8 @@ public sealed class MainViewModel : Observable
     public PrinterProfile? SelectedPrinter { get; set; }
     public ScaleProfile? SelectedScale { get; set; }
     private string page = "PDV", search = "", category = "Todos", stockSearch = "", clientSearch = "", reportPeriod = "Últimos 30 dias", message = "";
+    private string stockCategory = "Todas as categorias", stockSort = "Nome do produto";
+    private bool stockSortDescending;
     private decimal discount, deliveryFee;
     private bool isProductsList;
     private double productCardWidth = 194;
@@ -96,6 +104,9 @@ public sealed class MainViewModel : Observable
     public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value == "Fiscal" && IsAdmin) BuildFiscalChecks(); } } }
     public string Search { get => search; set { if (Set(ref search, value)) FilterProducts(); } }
     public string StockSearch { get => stockSearch; set { if (Set(ref stockSearch, value)) FilterStock(); } }
+    public string StockCategory { get => stockCategory; set { if (Set(ref stockCategory, value)) FilterStock(); } }
+    public string StockSort { get => stockSort; set { if (Set(ref stockSort, value)) FilterStock(); } }
+    public bool StockSortDescending { get => stockSortDescending; set { if (Set(ref stockSortDescending, value)) { Changed(nameof(StockSortDirectionLabel)); FilterStock(); } } }
     public string ClientSearch { get => clientSearch; set { if (Set(ref clientSearch, value)) FilterClients(); } }
     public string Category { get => category; set { if (Set(ref category, value)) FilterProducts(); } }
     public string ReportPeriod { get => reportPeriod; set { if (Set(ref reportPeriod, value)) BuildReport(); } }
@@ -157,7 +168,28 @@ public sealed class MainViewModel : Observable
         Tiles = Snapshot.Products.Where(p => p.Active && (Category == "Todos" || p.Category == Category) && Matches(Search.Trim(), p.Name, p.Code, p.Barcode)).Select(p => new ProductTile(p, StoreService.Available(Snapshot, p, ActiveOrderId))).ToList();
         Changed(nameof(Tiles)); Changed(nameof(ProductCount));
     }
-    private void FilterStock() { StockRows = Snapshot.Products.Where(p => Matches(StockSearch.Trim(), p.Name, p.Code, p.Barcode)).Select(p => new StockRow(p, StoreService.Reserved(Snapshot, p.Id))).ToList(); Changed(nameof(StockRows)); }
+    private void FilterStock()
+    {
+        Guid? selected = SelectedStock?.Product.Id;
+        var rows = Snapshot.Products.Where(p => (StockCategory == "Todas as categorias" || p.Category.Equals(StockCategory, StringComparison.CurrentCultureIgnoreCase)) && Matches(StockSearch.Trim(), p.Name, p.Code, p.Barcode, p.Category))
+            .Select(p => new StockRow(p, StoreService.Reserved(Snapshot, p.Id), StoreService.CanDeleteProduct(Snapshot, p.Id)));
+        var textComparer = StringComparer.CurrentCultureIgnoreCase;
+        IOrderedEnumerable<StockRow> ordered = StockSort switch
+        {
+            "Código" => StockSortDescending ? rows.OrderByDescending(r => r.Code, textComparer) : rows.OrderBy(r => r.Code, textComparer),
+            "Categoria" => StockSortDescending ? rows.OrderByDescending(r => r.Category, textComparer) : rows.OrderBy(r => r.Category, textComparer),
+            "Estoque físico" => StockSortDescending ? rows.OrderByDescending(r => r.Stock) : rows.OrderBy(r => r.Stock),
+            "Estoque reservado" => StockSortDescending ? rows.OrderByDescending(r => r.Reserved) : rows.OrderBy(r => r.Reserved),
+            "Estoque livre" => StockSortDescending ? rows.OrderByDescending(r => r.Available) : rows.OrderBy(r => r.Available),
+            "Unidade" => StockSortDescending ? rows.OrderByDescending(r => r.Unit, textComparer) : rows.OrderBy(r => r.Unit, textComparer),
+            "Preço de venda" => StockSortDescending ? rows.OrderByDescending(r => r.Price) : rows.OrderBy(r => r.Price),
+            "Situação" => StockSortDescending ? rows.OrderByDescending(r => r.Status, textComparer) : rows.OrderBy(r => r.Status, textComparer),
+            _ => StockSortDescending ? rows.OrderByDescending(r => r.Name, textComparer) : rows.OrderBy(r => r.Name, textComparer)
+        };
+        StockRows = ordered.ThenBy(r => r.Code, textComparer).ToList(); Changed(nameof(StockRows));
+        SelectedStock = StockRows.FirstOrDefault(r => r.Product.Id == selected); Changed(nameof(SelectedStock));
+        Changed(nameof(StockCount)); Changed(nameof(StockEmptyVisibility));
+    }
     private void FilterClients() { CustomerRows = Snapshot.Customers.Where(c => Matches(ClientSearch.Trim(), c.Name, c.Phone, c.Document)).OrderBy(c => c.Name).Select(c => new CustomerRow(c, StoreService.Balance(Snapshot, c.Id))).ToList(); Changed(nameof(CustomerRows)); }
     private void BuildReport()
     {
@@ -169,12 +201,16 @@ public sealed class MainViewModel : Observable
     public void Refresh()
     {
         Snapshot = Service.Snapshot;
+        StockCategories = ["Todas as categorias", .. Snapshot.Products.Select(p => p.Category).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)];
+        if (!StockCategories.Contains(stockCategory, StringComparer.CurrentCultureIgnoreCase)) { stockCategory = "Todas as categorias"; Changed(nameof(StockCategory)); }
+        Changed(nameof(StockCategories));
         Guid? customerId = CartCustomer?.Id;
         CustomerOptions = [new(null, "Consumidor final"), .. Snapshot.Customers.OrderBy(c => c.Name).Select(c => new CustomerChoice(c.Id, c.Name))];
         CartCustomer = CustomerOptions.FirstOrDefault(c => c.Id == customerId) ?? CustomerOptions[0];
         Orders = Snapshot.Orders.OrderByDescending(o => o.Date).ToList(); Sales = Snapshot.Sales.OrderByDescending(v => v.Date).ToList();
         Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); CashSessions = Snapshot.CashSessions.OrderByDescending(c => c.OpenedAt).ToList();
         CashMovements = Snapshot.CashMovements.OrderByDescending(c => c.Date).ToList(); StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
+        RecentStockMovements = StockMovements.Take(5).Select(m => new StockMovementRow(m)).ToList(); Changed(nameof(RecentStockMovements));
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);

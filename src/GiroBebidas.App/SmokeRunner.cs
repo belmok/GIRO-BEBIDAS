@@ -96,8 +96,197 @@ public static class SmokeRunner
         CheckProductUi(window, output);
         CheckCartAmounts(window);
         CheckCashStatus(output);
+        CheckStockUi(window, output);
         vm.ClearCart(); window.Close();
         File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados. Menu do caixa acionado por automação, atualizado sem reabrir e fechado por Esc ou clique fora; histórico acessível e configurações restritas ao administrador. Formulário de configurações do caixa renderizado; fundo sugerido salvo sem alterar o saldo e adotado na próxima abertura pelo operador.\n");
+    }
+    private static void CheckStockUi(MainWindow window, string output)
+    {
+        var vm = window.Vm;
+        string originalPage = vm.Page, originalSearch = vm.StockSearch, originalCategory = vm.StockCategory,
+            originalSort = vm.StockSort, originalMessage = vm.Message;
+        bool originalDescending = vm.StockSortDescending;
+        Guid? originalSelected = vm.SelectedStock?.Product.Id;
+        double originalWidth = window.Width, originalHeight = window.Height;
+        var searchProvider = (IValueProvider)new TextBoxAutomationPeer(window.StockSearchInput).GetPattern(PatternInterface.Value);
+        ContextMenu? openedMenu = null;
+        FormDialog? duplicate = null, details = null;
+        Window? history = null;
+        var unused = new Product { Name = "Produto de teste do estoque", Code = "UI-STOCK-" + Guid.NewGuid().ToString("N")[..6].Replace('0', 'G'), Price = 10, Stock = 0, MinimumStock = 0, Category = "Outros" };
+        vm.Service.SaveProduct(unused);
+        var probe = vm.Service.Snapshot.Products.Single(p => p.Code == "005" && p.Active && !p.IsWeighed);
+        var photoProduct = vm.Service.Snapshot.Products.First(p => p.PhotoBase64.Length > 0);
+        // Round-trip only the isolated smoke fixture to render both movement signs.
+        vm.Service.AdjustStock(probe.Id, 1, "Conferência visual de entrada de estoque");
+        vm.Service.AdjustStock(probe.Id, -1, "Conferência visual de saída de estoque");
+        vm.Refresh();
+
+        void Search(string query) { searchProvider.SetValue(query); FlushLayout(window); }
+        void ResetFilters()
+        {
+            window.StockCategoryFilter.SelectedItem = "Todas as categorias";
+            window.StockSortFilter.SelectedItem = "Nome do produto";
+            vm.StockSortDescending = false; Search("");
+        }
+        void AssertBounds(FrameworkElement element)
+        {
+            var content = (FrameworkElement)window.Content;
+            var position = element.TranslatePoint(new Point(), content);
+            if (!element.IsVisible || element.ActualWidth <= 0 || element.ActualHeight <= 0 || position.X < -0.5 || position.Y < -0.5 ||
+                position.X + element.ActualWidth > content.ActualWidth + 0.5 || position.Y + element.ActualHeight > content.ActualHeight + 0.5)
+                throw new InvalidOperationException($"O controle de estoque {element.Name} precisa permanecer visível e inteiro na janela menor.");
+        }
+        Button MoreButton(Guid productId)
+        {
+            var row = vm.StockRows.Single(r => r.Product.Id == productId);
+            window.StockProductsGrid.ScrollIntoView(row, window.StockProductsGrid.Columns.Last()); FlushLayout(window);
+            return Descendants<Button>(window.StockProductsGrid).Single(b => b.Name == "StockMoreButton" && b.DataContext is StockRow r && r.Product.Id == productId);
+        }
+        MenuItem[] OpenMenu(Guid productId, bool canDelete)
+        {
+            openedMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+            var button = MoreButton(productId);
+            ((IInvokeProvider)new ButtonAutomationPeer(button).GetPattern(PatternInterface.Invoke)).Invoke();
+            FlushLayout(window);
+            openedMenu = button.ContextMenu ?? throw new InvalidOperationException("Cada produto precisa ter seu menu de ações.");
+            openedMenu.UpdateLayout();
+            var items = openedMenu.Items.OfType<MenuItem>().ToArray();
+            var row = (StockRow)button.DataContext;
+            if (!openedMenu.IsOpen || !ReferenceEquals(openedMenu.DataContext, row) || Math.Abs(openedMenu.ActualWidth - 260) > 0.5 || items.Length != 4 ||
+                items[0].Header?.ToString() != "Ver detalhes" || items[1].Header?.ToString() != "Duplicar produto" ||
+                items[2].Header?.ToString() != row.ToggleActiveLabel || items[3].Header?.ToString() != "Excluir produto" ||
+                row.CanDelete != canDelete || items[3].IsEnabled != canDelete || items[3].ToolTip?.ToString() != row.DeleteHint)
+                throw new InvalidOperationException("O menu do produto precisa carregar quatro ações, estado ativo e permissão de exclusão do produto clicado.");
+            foreach (var item in items)
+            {
+                var position = item.TranslatePoint(new Point(), openedMenu);
+                if (item.ActualWidth <= 0 || item.ActualHeight <= 0 || position.X < -0.5 || position.Y < -0.5 ||
+                    position.X + item.ActualWidth > openedMenu.ActualWidth + 0.5 || position.Y + item.ActualHeight > openedMenu.ActualHeight + 0.5)
+                    throw new InvalidOperationException("As ações do menu do produto precisam ser legíveis e não sofrer recorte.");
+            }
+            return items;
+        }
+
+        try
+        {
+            window.Width = 1480; window.Height = 940; vm.Page = "Estoque"; vm.Message = ""; ResetFilters();
+            var photoRow = vm.StockRows.Single(r => r.Product.Id == photoProduct.Id);
+            window.StockProductsGrid.ScrollIntoView(photoRow, window.StockProductsGrid.Columns[0]); FlushLayout(window);
+            if (photoRow.Image is not BitmapSource || !Descendants<Image>(window.StockProductsGrid).Any(i => i.DataContext is StockRow r && r.Product.Id == photoProduct.Id && ReferenceEquals(i.Source, r.Image)))
+                throw new InvalidOperationException("A foto persistida precisa aparecer na coluna do produto em estoque.");
+            Capture(window, Path.Combine(output, "35-estoque-novo.png"));
+
+            foreach (string query in new[] { probe.Name, probe.Code, probe.Barcode })
+            {
+                Search(query);
+                if (string.IsNullOrEmpty(query) || vm.StockSearch != query || window.StockSearchInput.Text != query || vm.StockRows.Count != 1 ||
+                    vm.StockRows[0].Product.Id != probe.Id || window.StockProductsGrid.Items.Count != 1)
+                    throw new InvalidOperationException($"A pesquisa de estoque por {query} precisa encontrar somente o produto correspondente.");
+                AssertSearchReadable(window.StockSearchInput);
+            }
+            Search(probe.Category);
+            if (vm.StockRows.Count == 0 || vm.StockRows.Any(r => r.Category != probe.Category))
+                throw new InvalidOperationException("A busca de estoque precisa reconhecer a categoria do produto.");
+            Search("");
+            window.StockCategoryFilter.SelectedItem = probe.Category; FlushLayout(window);
+            if (vm.StockCategory != probe.Category || vm.StockRows.Count == 0 || vm.StockRows.Any(r => r.Category != probe.Category))
+                throw new InvalidOperationException("A lista de categorias precisa aplicar o filtro ao estoque.");
+            window.StockCategoryFilter.SelectedItem = "Todas as categorias"; FlushLayout(window);
+            if (vm.StockCategory != "Todas as categorias" || vm.StockRows.Count != vm.Snapshot.Products.Count)
+                throw new InvalidOperationException("Todas as categorias precisa restaurar a lista completa do estoque.");
+
+            foreach (string sort in new[] { "Preço de venda", "Nome do produto" })
+            {
+                window.StockSortFilter.SelectedItem = sort; vm.StockSortDescending = false; FlushLayout(window);
+                if (vm.StockSort != sort || (sort == "Preço de venda"
+                    ? !vm.StockRows.Select(r => r.Price).SequenceEqual(vm.StockRows.Select(r => r.Price).OrderBy(p => p))
+                    : !vm.StockRows.Select(r => r.Name).SequenceEqual(vm.StockRows.Select(r => r.Name).OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase))))
+                    throw new InvalidOperationException("A seleção de ordenação precisa organizar os valores em ordem crescente.");
+                ((IInvokeProvider)new ButtonAutomationPeer(window.StockSortDirectionButton).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+                if (!vm.StockSortDescending || (sort == "Preço de venda"
+                    ? !vm.StockRows.Select(r => r.Price).SequenceEqual(vm.StockRows.Select(r => r.Price).OrderByDescending(p => p))
+                    : !vm.StockRows.Select(r => r.Name).SequenceEqual(vm.StockRows.Select(r => r.Name).OrderByDescending(n => n, StringComparer.CurrentCultureIgnoreCase))))
+                    throw new InvalidOperationException("O botão de inverter ordem precisa ordenar nomes e preços em ordem decrescente.");
+            }
+            ResetFilters();
+            if (vm.RecentStockMovements.Count > 5 || window.LatestStockMovementsGrid.Items.Count != vm.RecentStockMovements.Count ||
+                vm.RecentStockMovements.Any(m => (m.Sign > 0 && !m.QuantityLabel.StartsWith('+')) || (m.Sign < 0 && !m.QuantityLabel.StartsWith('-'))))
+                throw new InvalidOperationException("Últimas movimentações precisa limitar a lista a cinco registros e identificar entradas e saídas pelo sinal.");
+            foreach (int sign in new[] { 1, -1 })
+            {
+                Color color = (Color)ColorConverter.ConvertFromString(sign > 0 ? "#187B52" : "#B4483E");
+                if (!Descendants<TextBlock>(window.LatestStockMovementsGrid).Any(t => t.DataContext is StockMovementRow m && m.Sign == sign &&
+                    t.Text == m.QuantityLabel && t.Foreground is SolidColorBrush brush && brush.Color == color))
+                    throw new InvalidOperationException("Entradas devem aparecer em verde e saídas em vermelho nas movimentações recentes.");
+            }
+
+            window.Width = 1200; window.Height = 760; Search(probe.Name); AssertSearchReadable(window.StockSearchInput);
+            foreach (var element in new FrameworkElement[] { window.StockSearchFrame, window.StockCategoryFilter, window.StockSortFilter, window.StockSortDirectionButton,
+                window.StockAdjustButton, window.StockEditSelectedButton, window.StockNewProductButton, window.AllStockMovementsButton }) AssertBounds(element);
+            Search(""); window.StockProductsGrid.ScrollIntoView(vm.StockRows.First(), window.StockProductsGrid.Columns[0]); FlushLayout(window);
+            Capture(window, Path.Combine(output, "36-estoque-menor.png"));
+            window.Width = 1480; window.Height = 940; FlushLayout(window);
+
+            OpenMenu(photoProduct.Id, false); CaptureElement(openedMenu!, Path.Combine(output, "37-produto-acoes.png")); openedMenu!.IsOpen = false;
+            var reserved = vm.StockRows.First(r => r.Reserved > 0);
+            OpenMenu(reserved.Product.Id, false); openedMenu!.IsOpen = false;
+            var actions = OpenMenu(unused.Id, true);
+            if (actions[2].Header?.ToString() != "Desativar produto") throw new InvalidOperationException("Produto ativo precisa permitir desativação no menu.");
+            ((IInvokeProvider)new MenuItemAutomationPeer(actions[2]).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+            if (openedMenu!.IsOpen || vm.Snapshot.Products.Single(p => p.Id == unused.Id).Active || vm.StockRows.Single(r => r.Product.Id == unused.Id).Status != "Inativo" ||
+                new JsonStore(vm.Service.Store.DirectoryPath).Snapshot().Products.Single(p => p.Id == unused.Id).Active)
+                throw new InvalidOperationException("Desativar no menu precisa fechar as ações, persistir a mudança e exibir Inativo.");
+            actions = OpenMenu(unused.Id, true);
+            if (actions[2].Header?.ToString() != "Ativar produto") throw new InvalidOperationException("Produto inativo precisa permitir ativação no menu.");
+            ((IInvokeProvider)new MenuItemAutomationPeer(actions[2]).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+            if (openedMenu!.IsOpen || !vm.Snapshot.Products.Single(p => p.Id == unused.Id).Active || vm.StockRows.Single(r => r.Product.Id == unused.Id).Status != "Sem estoque")
+                throw new InvalidOperationException("Ativar no menu precisa restaurar o cadastro e mostrar seu estoque atual.");
+
+            string sourceBefore = System.Text.Json.JsonSerializer.Serialize(photoProduct, JsonStore.JsonOptions);
+            int countBefore = vm.Service.Snapshot.Products.Count;
+            duplicate = window.CreateDuplicateProductDialog(photoProduct); duplicate.Owner = null; duplicate.SizeToContent = SizeToContent.Manual; duplicate.Height = Math.Min(800, duplicate.MaxHeight);
+            string duplicateCode = duplicate.Value("code");
+            if (duplicate.Decimal("stock") != 0 || duplicate.Value("barcode") != "" || duplicate.Value("name") != photoProduct.Name + " (cópia)" ||
+                duplicateCode == photoProduct.Code || vm.Service.Snapshot.Products.Any(p => p.Code == duplicateCode) ||
+                duplicate.Decimal("price") != photoProduct.Price || duplicate.Value("description") != photoProduct.Description ||
+                duplicate.Value("ncm") != photoProduct.Tax.Ncm || duplicate.Value("cest") != photoProduct.Tax.Cest || duplicate.Value("cfop") != photoProduct.Tax.Cfop ||
+                vm.Service.Snapshot.Products.Count != countBefore || System.Text.Json.JsonSerializer.Serialize(photoProduct, JsonStore.JsonOptions) != sourceBefore)
+                throw new InvalidOperationException("Duplicar precisa preparar uma cópia independente, com código novo, estoque zero, sem código de barras e sem alterar o cadastro original.");
+            Capture(duplicate, Path.Combine(output, "38-duplicar-produto.png"));
+            if (!Descendants<Image>((FrameworkElement)duplicate.Content).Any(i => i.Source is BitmapSource))
+                throw new InvalidOperationException("A duplicação precisa preservar a foto do produto.");
+            duplicate.Submit?.Invoke(duplicate);
+            var savedCopy = vm.Service.Snapshot.Products.Single(p => p.Code == duplicateCode);
+            if (vm.Service.Snapshot.Products.Count != countBefore + 1 || savedCopy.Id == photoProduct.Id || savedCopy.Stock != 0 || savedCopy.Barcode != "" ||
+                savedCopy.PhotoBase64 != photoProduct.PhotoBase64 || System.Text.Json.JsonSerializer.Serialize(savedCopy.Tax, JsonStore.JsonOptions) != System.Text.Json.JsonSerializer.Serialize(photoProduct.Tax, JsonStore.JsonOptions) ||
+                System.Text.Json.JsonSerializer.Serialize(vm.Service.Snapshot.Products.Single(p => p.Id == photoProduct.Id), JsonStore.JsonOptions) != sourceBefore)
+                throw new InvalidOperationException("Salvar a duplicação precisa criar outro produto com foto e dados fiscais preservados, sem mudar a origem.");
+            duplicate.Close(); duplicate = null; vm.Refresh();
+
+            details = window.CreateStockDetailsDialog(photoProduct); details.Owner = null; details.SizeToContent = SizeToContent.Manual; details.Height = Math.Min(740, details.MaxHeight);
+            Capture(details, Path.Combine(output, "39-detalhes-produto.png"));
+            var detailText = string.Join("\n", Descendants<TextBlock>((FrameworkElement)details.Content).Select(t => t.Text));
+            if (!detailText.Contains(photoProduct.Name, StringComparison.Ordinal) || !detailText.Contains("Código: " + photoProduct.Code, StringComparison.Ordinal) ||
+                !detailText.Contains("Reservado:", StringComparison.Ordinal) || !detailText.Contains("NCM:", StringComparison.Ordinal) ||
+                !Descendants<Image>((FrameworkElement)details.Content).Any(i => i.Source is BitmapSource))
+                throw new InvalidOperationException("Detalhes precisa apresentar foto, identificação, reserva e dados fiscais do produto.");
+            details.Close(); details = null;
+            history = window.CreateStockMovementsWindow(); history.Owner = null; Capture(history, Path.Combine(output, "40-movimentacoes-estoque.png"));
+            var historyTable = Descendants<DataGrid>((FrameworkElement)history.Content).Single();
+            if (historyTable.Items.Count != vm.Service.Snapshot.StockMovements.Count || historyTable.Items.OfType<StockMovementRow>().Count() != historyTable.Items.Count)
+                throw new InvalidOperationException("Ver todas precisa apresentar o histórico completo das movimentações de estoque.");
+            history.Close(); history = null;
+        }
+        finally
+        {
+            if (openedMenu is not null) openedMenu.IsOpen = false;
+            duplicate?.Close(); details?.Close(); history?.Close();
+            if (vm.Service.Snapshot.Products.Any(p => p.Id == unused.Id && !p.Active)) vm.Service.SetProductActive(unused.Id, true);
+            vm.StockSearch = originalSearch; vm.StockCategory = originalCategory; vm.StockSort = originalSort; vm.StockSortDescending = originalDescending;
+            vm.Refresh(); vm.SelectedStock = vm.StockRows.FirstOrDefault(r => r.Product.Id == originalSelected);
+            vm.Page = originalPage; vm.Message = originalMessage; window.Width = originalWidth; window.Height = originalHeight; FlushLayout(window);
+        }
+        File.AppendAllText(Path.Combine(output, "estoque-smoke-ok.txt"), "Busca nativa por nome, código, barras e categoria; filtros e ordenação nos dois sentidos; fotos e movimentações com sinais e cores; layout 1200 x 760; menus por linha com exclusão protegida; ativação e desativação persistidas; cópia independente com foto e tributação; detalhes e histórico completo conferidos.\n");
     }
     private static void CheckProductUi(MainWindow window, string output)
     {

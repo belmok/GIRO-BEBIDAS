@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -21,8 +22,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent(); Vm = new(service); DataContext = Vm;
         Vm.Notify = Notify; Vm.RequestWeight = AddWeighed;
+        Vm.PropertyChanged += (_, args) => { if (args.PropertyName is nameof(MainViewModel.StockSort) or nameof(MainViewModel.StockSortDescending)) UpdateStockSortHeaders(); };
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
-        Loaded += async (_, _) => { ResizeProductCards(); ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
+        Loaded += async (_, _) => { ResizeProductCards(); UpdateStockSortHeaders(); ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
         Closed += (_, _) => UpdatesConfigurationPanel.CloseOperations();
         Closing += Window_Closing;
     }
@@ -116,6 +118,107 @@ public partial class MainWindow : Window
     private void ClearCart_Click(object sender, RoutedEventArgs e) { if (Vm.Cart.Count == 0 || Confirm("Limpar os produtos da venda atual? O pedido salvo, se houver, continuará disponível.")) Vm.ClearCart(); }
     private void NewProduct_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(new(), false));
     private void EditProduct_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(Require(Vm.SelectedStock, "um produto").Product, true));
+    private void StockSortDirection_Click(object sender, RoutedEventArgs e) => Vm.StockSortDescending = !Vm.StockSortDescending;
+    private void UpdateStockSortHeaders()
+    {
+        string member = Vm.StockSort switch { "Código" => "Code", "Categoria" => "Category", "Estoque físico" => "Stock", "Estoque reservado" => "Reserved", "Estoque livre" => "Available", "Unidade" => "Unit", "Preço de venda" => "Price", "Situação" => "Status", _ => "Name" };
+        foreach (var column in StockProductsGrid.Columns)
+            column.SortDirection = column.SortMemberPath == member ? (Vm.StockSortDescending ? ListSortDirection.Descending : ListSortDirection.Ascending) : null;
+    }
+    private void StockProductsGrid_Sorting(object sender, DataGridSortingEventArgs e)
+    {
+        e.Handled = true;
+        string? choice = e.Column.SortMemberPath switch { "Code" => "Código", "Name" => "Nome do produto", "Category" => "Categoria", "Stock" => "Estoque físico", "Reserved" => "Estoque reservado", "Available" => "Estoque livre", "Unit" => "Unidade", "Price" => "Preço de venda", "Status" => "Situação", _ => null };
+        if (choice is null) return;
+        bool descending = Vm.StockSort == choice && !Vm.StockSortDescending;
+        Vm.StockSort = choice; Vm.StockSortDescending = descending;
+        foreach (var column in StockProductsGrid.Columns) column.SortDirection = null;
+        e.Column.SortDirection = descending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+    }
+    private Product StockProduct(object sender)
+    {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+        var row = sender is FrameworkElement { DataContext: StockRow selected } ? selected : Require(Vm.SelectedStock, "um produto");
+        Vm.SelectedStock = row;
+        if (sender is MenuItem item && ItemsControl.ItemsControlFromItemContainer(item) is ContextMenu menu) menu.IsOpen = false;
+        return Vm.Service.Snapshot.Products.FirstOrDefault(p => p.Id == row.Product.Id) ?? throw new InvalidOperationException("Este produto não está mais cadastrado.");
+    }
+    private void StockRowMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var button = (Button)sender; _ = StockProduct(sender);
+            var menu = button.ContextMenu ?? throw new InvalidOperationException("Menu de produto indisponível.");
+            menu.PlacementTarget = button; menu.Placement = PlacementMode.Bottom;
+            menu.HorizontalOffset = button.ActualWidth - menu.Width; menu.VerticalOffset = 4;
+            menu.IsOpen = true;
+        }
+        catch (Exception ex) { Notify(ex.Message); }
+    }
+    private void EditStockRow_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(StockProduct(sender), true));
+    private void StockDetails_Click(object sender, RoutedEventArgs e) => Guard(() => CreateStockDetailsDialog(StockProduct(sender)).ShowDialog());
+    internal FormDialog CreateStockDetailsDialog(Product product)
+    {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+        var state = Vm.Service.Snapshot;
+        var d = new FormDialog(this, "Detalhes do produto", product.Name, "Fechar");
+        d.Photo(PhotoTools.Decode(product.PhotoBase64) ?? BeverageArt.Create(product));
+        d.Info($"Código: {product.Code}\nCódigo de barras: {(product.Barcode.Length > 0 ? product.Barcode : "Não informado")}\nCategoria: {product.Category}\nSituação: {(product.Active ? "Ativo" : "Inativo")}");
+        d.Info($"Venda: {product.Price:C2} / {product.Unit}\nCusto: {product.Cost:C2}\nEstoque físico: {product.Stock:0.###}\nReservado: {StoreService.Reserved(state, product.Id):0.###}\nLivre: {StoreService.Available(state, product):0.###}\nEstoque mínimo: {product.MinimumStock:0.###}");
+        d.Info(product.WholesaleMinimum > 0 ? $"Atacado: {product.WholesalePrice:C2} a partir de {product.WholesaleMinimum:0.###} {product.Unit}." : "Preço de atacado desativado.");
+        d.Info(product.Description.Length > 0 ? product.Description : "Descrição não informada.");
+        d.Info($"NCM: {product.Tax.Ncm}\nCEST: {product.Tax.Cest}\nCFOP: {product.Tax.Cfop}");
+        return d;
+    }
+    private void DuplicateStock_Click(object sender, RoutedEventArgs e) => Guard(() =>
+    {
+        if (CreateDuplicateProductDialog(StockProduct(sender)).ShowDialog() == true) Notify("Cópia do produto cadastrada com novo código e estoque próprio.");
+    });
+    internal FormDialog CreateDuplicateProductDialog(Product source)
+    {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+        var copy = JsonSerializer.Deserialize<Product>(JsonSerializer.Serialize(source, JsonStore.JsonOptions), JsonStore.JsonOptions)!;
+        copy.Id = Guid.NewGuid(); copy.Code = NextProductCode(); copy.Barcode = ""; copy.Stock = 0; copy.Active = true;
+        copy.Name = source.Name[..Math.Min(source.Name.Length, 92)] + " (cópia)";
+        return CreateProductDialog(copy, false);
+    }
+    private string NextProductCode()
+    {
+        var codes = Vm.Service.Snapshot.Products.Select(p => p.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        int next = codes.Count + 1;
+        while (codes.Contains(next.ToString("000"))) next++;
+        return next.ToString("000");
+    }
+    private void ToggleStockActive_Click(object sender, RoutedEventArgs e) => Guard(() =>
+    {
+        var product = StockProduct(sender); Vm.Service.SetProductActive(product.Id, !product.Active);
+        Notify(product.Active ? "Produto desativado. Estoque e histórico preservados." : "Produto ativado para venda.");
+    });
+    private void DeleteStock_Click(object sender, RoutedEventArgs e) => Guard(() =>
+    {
+        var product = StockProduct(sender);
+        if (!StoreService.CanDeleteProduct(Vm.Service.Snapshot, product.Id)) throw new InvalidOperationException("Este produto possui estoque ou histórico. Use Desativar produto para preservar os registros.");
+        if (Confirm($"Excluir {product.Name} (código {product.Code})? Este cadastro sem estoque e sem histórico será removido.")) { Vm.Service.DeleteProduct(product.Id); Notify("Produto excluído."); }
+    });
+    private void AllStockMovements_Click(object sender, RoutedEventArgs e) => Guard(() => CreateStockMovementsWindow().ShowDialog());
+    internal Window CreateStockMovementsWindow()
+    {
+        if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+        var root = new Grid { Margin = new Thickness(24) };
+        root.RowDefinitions.Add(new() { Height = GridLength.Auto }); root.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) }); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        root.Children.Add(new TextBlock { Text = "Movimentações do estoque", FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 18) });
+        var table = new DataGrid { ItemsSource = Vm.Service.Snapshot.StockMovements.OrderByDescending(m => m.Date).Select(m => new StockMovementRow(m)).ToList(), RowHeight = 42 };
+        table.Columns.Add(new DataGridTextColumn { Header = "Data", Binding = new System.Windows.Data.Binding("Date") { StringFormat = "dd/MM/yyyy HH:mm" }, Width = 160 });
+        table.Columns.Add(new DataGridTextColumn { Header = "Produto", Binding = new System.Windows.Data.Binding("ProductName"), Width = new DataGridLength(1, DataGridLengthUnitType.Star), MinWidth = 180 });
+        table.Columns.Add(new DataGridTextColumn { Header = "Quantidade", Binding = new System.Windows.Data.Binding("QuantityLabel"), Width = 110 });
+        table.Columns.Add(new DataGridTextColumn { Header = "Motivo", Binding = new System.Windows.Data.Binding("Reason"), Width = new DataGridLength(1.4, DataGridLengthUnitType.Star), MinWidth = 180 });
+        table.Columns.Add(new DataGridTextColumn { Header = "Usuário", Binding = new System.Windows.Data.Binding("UserName"), Width = 110 });
+        Grid.SetRow(table, 1); root.Children.Add(table);
+        var window = new Window { Owner = this, Title = "Giro Bebidas • Movimentações do estoque", Width = 1000, Height = 650, MinWidth = 800, MinHeight = 450, WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = root, Language = System.Windows.Markup.XmlLanguage.GetLanguage("pt-BR") };
+        var close = new Button { Content = "Fechar", IsCancel = true, Margin = new Thickness(0, 16, 0, 0), HorizontalAlignment = HorizontalAlignment.Right, MinWidth = 100 };
+        close.Click += (_, _) => window.Close(); Grid.SetRow(close, 2); root.Children.Add(close);
+        return window;
+    }
     private void ProductForm(Product p, bool editing)
     {
         if (CreateProductDialog(p, editing).ShowDialog() == true) Notify("Produto salvo com sucesso.");
@@ -132,7 +235,7 @@ public partial class MainWindow : Window
         });
         d.Action("Remover foto", () => { photo = ""; image.Source = BeverageArt.Create(p); });
         d.Text("name", "Nome do produto", p.Name); d.Text("description", "Descrição", p.Description, true);
-        d.Text("code", "Código / SKU", editing ? p.Code : (Vm.Snapshot.Products.Count + 1).ToString("000")); d.Text("barcode", "Código de barras", p.Barcode);
+        d.Text("code", "Código / SKU", editing || p.Code.Length > 0 ? p.Code : NextProductCode()); d.Text("barcode", "Código de barras", p.Barcode);
         d.Choice("category", "Categoria", new[] { "Cervejas", "Refrigerantes", "Destilados", "Água e gelo", "Outros" }, p.Category, editable: true);
         d.Choice("unit", "Unidade de venda", new[] { "un", "cx", "kg" }, p.Unit);
         d.Choice("package", "Ilustração quando não houver foto", new[] { "Lata", "Garrafa", "Pacote", "Caixa" }, p.Package);
