@@ -1,5 +1,11 @@
 # Controle de versões
 
+## 1.4.2 — 12/10/2026
+
+Rolagem reduzida e proporcional ao touchpad também no carrinho da venda, nos produtos em estoque e nas últimas movimentações. Os gestos pequenos avançam em pixels, com limites no início e no fim da lista. As grades continuam usando virtualização; seleção e ações dos produtos permanecem disponíveis.
+
+Conferência nativa aprovada para passos da roda, pequenos deltas nos dois sentidos, sequência de eventos sem layout intermediário, inversão e deslocamento externo da barra. Quantidades, total, dados gravados, seleção, rolagem horizontal, botões do carrinho e menu do produto foram preservados. Compilação sem avisos ou erros; testes realizados somente em dados isolados.
+
 ## 1.4.1 — 12/10/2026
 
 Confirmação de atualização redesenhada no padrão do Giro Bebidas: título e versão em destaque, cartão de cópia de segurança, caminho completo selecionável e ações Atualizar agora e Agora não. Cancelar, Esc ou fechar a janela mantém o PDV aberto. A verificação do instalador, o backup e a validação de caixa fechado e carrinho vazio permanecem no fluxo de atualização.

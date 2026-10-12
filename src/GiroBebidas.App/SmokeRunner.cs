@@ -101,6 +101,7 @@ public static class SmokeRunner
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
             CheckComboBoxScrolling(window, output);
+            CheckTouchpadAreas(window, output);
             vm.ClearCart(); window.Close();
             File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados. Menu do caixa acionado por automação, atualizado sem reabrir e fechado por Esc ou clique fora; histórico acessível e configurações restritas ao administrador. Formulário de configurações do caixa renderizado; fundo sugerido salvo sem alterar o saldo e adotado na próxima abertura pelo operador.\n");
         }
@@ -229,6 +230,104 @@ public static class SmokeRunner
             window.Vm.Page = page; FlushLayout(window);
         }
         File.WriteAllText(Path.Combine(output, "opcoes-rolagem-smoke-ok.txt"), "Lista real de ordenação conferida: roda120, deltas20 do touchpad nos dois sentidos, limites inicial/final, seleção preservada ao rolar, seleção por teclado e automação mantidas.\n");
+    }
+    private static void CheckTouchpadAreas(MainWindow window, string output)
+    {
+        var vm = window.Vm;
+        string page = vm.Page, message = vm.Message;
+        double width = window.Width, height = window.Height;
+        decimal discount = vm.Discount, delivery = vm.DeliveryFee;
+        Guid? customer = vm.CartCustomer?.Id, selectedStock = vm.SelectedStock?.Product.Id;
+        var originalCart = vm.Cart.Select(line => (Line: line, Quantity: line.Quantity)).ToArray();
+        var movementProduct = vm.Service.Snapshot.Products.First(p => p.Active && !p.IsWeighed && vm.Service.Available(p.Id) > 10);
+        for (int i = 0; i < 2; i++)
+        {
+            vm.Service.AdjustStock(movementProduct.Id, 1, "Conferência da rolagem: entrada");
+            vm.Service.AdjustStock(movementProduct.Id, -1, "Conferência da rolagem: saída");
+        }
+        vm.Refresh();
+        string storedBefore = System.Text.Json.JsonSerializer.Serialize(vm.Service.Snapshot, JsonStore.JsonOptions);
+        try
+        {
+            window.Width = 1200; window.Height = 760; vm.Page = "PDV"; vm.ClearCart();
+            foreach (var product in vm.Snapshot.Products.Where(p => p.Active && !p.IsWeighed && vm.Service.Available(p.Id) > 2).Take(8)) vm.AddProduct(product, 1);
+            FlushLayout(window);
+            var quantityButton = Descendants<Button>(window.CartItemsScrollViewer).First(b => b.Content?.ToString() == "+");
+            var cartLine = (CartLine)quantityButton.DataContext;
+            decimal total = vm.Total;
+            var quantities = vm.Cart.ToDictionary(line => line.Product.Id, line => line.Quantity);
+            CheckArea(window.CartItemsScrollViewer, quantityButton);
+            if (vm.Total != total || vm.Cart.Any(line => quantities[line.Product.Id] != line.Quantity))
+                throw new InvalidOperationException("Rolar o carrinho não pode mudar as quantidades ou o total da venda.");
+            ((IInvokeProvider)new ButtonAutomationPeer(quantityButton).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+            if (cartLine.Quantity != 2) throw new InvalidOperationException("Aumentar quantidade precisa continuar funcionando após rolar o carrinho.");
+            var decrease = Descendants<Button>(window.CartItemsScrollViewer).Single(b => b.Content?.ToString() == "−" && ReferenceEquals(b.DataContext, cartLine));
+            ((IInvokeProvider)new ButtonAutomationPeer(decrease).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+            if (cartLine.Quantity != 1 || vm.Total != total) throw new InvalidOperationException("Diminuir quantidade precisa restaurar o total após a rolagem.");
+            Capture(window, Path.Combine(output, "44-carrinho-rolagem-controlada.png"));
+
+            vm.Page = "Estoque"; FlushLayout(window);
+            window.StockProductsGrid.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, vm.StockRows.First());
+            CheckArea(window.StockProductsGrid, window.StockProductsGrid);
+            CheckArea(window.LatestStockMovementsGrid, window.LatestStockMovementsGrid);
+            var row = vm.StockRows.Last();
+            window.StockProductsGrid.ScrollIntoView(row, window.StockProductsGrid.Columns.Last()); FlushLayout(window);
+            var more = Descendants<Button>(window.StockProductsGrid).Single(b => b.Name == "StockMoreButton" && b.DataContext is StockRow stock && stock.Product.Id == row.Product.Id);
+            ((IInvokeProvider)new ButtonAutomationPeer(more).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+            var menu = more.ContextMenu!;
+            try
+            {
+                if (!menu.IsOpen || menu.DataContext is not StockRow clicked || clicked.Product.Id != row.Product.Id || menu.Items.OfType<MenuItem>().Count() != 4)
+                    throw new InvalidOperationException("O menu de ações precisa continuar vinculado ao produto correto após rolar e reciclar as linhas.");
+            }
+            finally { menu.IsOpen = false; }
+            Capture(window, Path.Combine(output, "45-estoque-rolagem-controlada.png"));
+            if (System.Text.Json.JsonSerializer.Serialize(vm.Service.Snapshot, JsonStore.JsonOptions) != storedBefore)
+                throw new InvalidOperationException("Os gestos de rolagem não podem alterar os dados gravados do depósito.");
+        }
+        finally
+        {
+            vm.ClearCart(); foreach (var saved in originalCart) { saved.Line.Quantity = saved.Quantity; vm.Cart.Add(saved.Line); }
+            vm.Discount = discount; vm.DeliveryFee = delivery; vm.Refresh(); vm.CartCustomer = vm.CustomerOptions.FirstOrDefault(c => c.Id == customer);
+            vm.SelectedStock = vm.StockRows.FirstOrDefault(row => row.Product.Id == selectedStock);
+            vm.Page = page; vm.Message = message; window.Width = width; window.Height = height; FlushLayout(window);
+        }
+        File.WriteAllText(Path.Combine(output, "areas-touchpad-smoke-ok.txt"), "Carrinho, produtos em estoque e últimas movimentações conferidos com passos120, deltas20, eventos consecutivos sem layout, inversão, limites e deslocamento externo. Quantidades, total, dados, seleção, rolagem horizontal, virtualização e menu de ações preservados.\n");
+
+        void CheckArea(FrameworkElement area, FrameworkElement source)
+        {
+            var viewer = ControlledScrolling.GetScrollViewer(area) ?? throw new InvalidOperationException("A área precisa ter seu próprio controle de rolagem.");
+            if (!ControlledScrolling.GetIsEnabled(area) || viewer.ScrollableHeight <= 30)
+                throw new InvalidOperationException($"A área {area.Name} precisa permitir conferir sua rolagem reduzida.");
+            if (area is DataGrid grid && (!grid.EnableRowVirtualization || !viewer.CanContentScroll || VirtualizingPanel.GetScrollUnit(grid) != ScrollUnit.Pixel))
+                throw new InvalidOperationException("As grades precisam preservar virtualização com rolagem em pixels.");
+            object? selection = (area as DataGrid)?.SelectedItem;
+            viewer.ScrollToVerticalOffset(30); if (viewer.ScrollableWidth > 0) viewer.ScrollToHorizontalOffset(Math.Min(24, viewer.ScrollableWidth)); FlushLayout(window);
+            double horizontal = viewer.HorizontalOffset;
+            void Wheel(int delta, bool flush = true)
+            {
+                var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = Mouse.PreviewMouseWheelEvent };
+                source.RaiseEvent(args); if (flush) FlushLayout(window);
+                if (!args.Handled) throw new InvalidOperationException($"A área {area.Name} precisa consumir o gesto de rolagem.");
+            }
+            void CheckOffset(double expected)
+            {
+                if (Math.Abs(viewer.VerticalOffset - Math.Clamp(expected, 0, viewer.ScrollableHeight)) > 0.6 ||
+                    Math.Abs(viewer.HorizontalOffset - horizontal) > 0.5 || (area is DataGrid table && !Equals(table.SelectedItem, selection)))
+                    throw new InvalidOperationException($"Rolagem incorreta em {area.Name}: esperado={expected:0.###}, atual={viewer.VerticalOffset:0.###}; horizontal e seleção precisam ser preservados.");
+            }
+            double distance = SystemParameters.WheelScrollLines == 0 ? 0 : 22;
+            double before = viewer.VerticalOffset; Wheel(-120); CheckOffset(before + distance);
+            before = viewer.VerticalOffset; Wheel(-20); CheckOffset(before + distance / 6);
+            before = viewer.VerticalOffset; Wheel(20); CheckOffset(before - distance / 6);
+            viewer.ScrollToVerticalOffset(30); FlushLayout(window); before = viewer.VerticalOffset;
+            for (int i = 0; i < 6; i++) Wheel(-20, false); FlushLayout(window); CheckOffset(before + distance);
+            for (int i = 0; i < 6; i++) Wheel(20, false); FlushLayout(window); CheckOffset(before);
+            viewer.ScrollToVerticalOffset(42); FlushLayout(window); before = viewer.VerticalOffset; Wheel(-20); CheckOffset(before + distance / 6);
+            viewer.ScrollToTop(); FlushLayout(window); Wheel(120); CheckOffset(0);
+            viewer.ScrollToBottom(); FlushLayout(window); Wheel(-120); CheckOffset(viewer.ScrollableHeight);
+            viewer.ScrollToTop(); FlushLayout(window);
+        }
     }
     private static void CheckStockUi(MainWindow window, string output)
     {
