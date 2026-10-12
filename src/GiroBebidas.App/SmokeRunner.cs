@@ -100,6 +100,7 @@ public static partial class SmokeRunner
             CheckCashStatus(output);
             CheckCashDashboard(output);
             CheckOrdersDashboard(output);
+            CheckModernDialogs(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
             CheckComboBoxScrolling(window, output);
@@ -405,7 +406,8 @@ public static partial class SmokeRunner
         double originalWidth = window.Width, originalHeight = window.Height;
         var searchProvider = (IValueProvider)new TextBoxAutomationPeer(window.StockSearchInput).GetPattern(PatternInterface.Value);
         ContextMenu? openedMenu = null;
-        FormDialog? duplicate = null, details = null;
+        FormDialog? duplicate = null;
+        ProductDetailsWindow? details = null;
         Window? history = null;
         var unused = new Product { Name = "Produto de teste do estoque", Code = "UI-STOCK-" + Guid.NewGuid().ToString("N")[..6].Replace('0', 'G'), Price = 10, Stock = 0, MinimumStock = 0, Category = "Sem álcool especial" };
         vm.Service.SaveProduct(unused);
@@ -595,8 +597,8 @@ public static partial class SmokeRunner
             details = window.CreateStockDetailsDialog(photoProduct); details.Owner = null; details.SizeToContent = SizeToContent.Manual; details.Height = Math.Min(740, details.MaxHeight);
             Capture(details, Path.Combine(output, "39-detalhes-produto.png"));
             var detailText = string.Join("\n", Descendants<TextBlock>((FrameworkElement)details.Content).Select(t => t.Text));
-            if (!detailText.Contains(photoProduct.Name, StringComparison.Ordinal) || !detailText.Contains("Código: " + photoProduct.Code, StringComparison.Ordinal) ||
-                !detailText.Contains("Reservado:", StringComparison.Ordinal) || !detailText.Contains("NCM:", StringComparison.Ordinal) ||
+            if (details.ProductForDisplay.Id != photoProduct.Id || details.ProductNameLabel.Text != photoProduct.Name || details.ProductForDisplay.Code != photoProduct.Code ||
+                !detailText.Contains("Reservado", StringComparison.Ordinal) || !detailText.Contains("NCM:", StringComparison.Ordinal) ||
                 !Descendants<Image>((FrameworkElement)details.Content).Any(i => i.Source is BitmapSource))
                 throw new InvalidOperationException("Detalhes precisa apresentar foto, identificação, reserva e dados fiscais do produto.");
             details.Close(); details = null;

@@ -33,17 +33,12 @@ public partial class MainWindow
     private void OrderRowStatus_Click(object sender, RoutedEventArgs e) => OrderStatus_Click(sender, e);
     private void OrderRowReceive_Click(object sender, RoutedEventArgs e) => LoadOrder_Click(sender, e);
 
-    internal FormDialog CreateOrderDetailsDialog(Order selected)
+    internal OrderDetailsWindow CreateOrderDetailsDialog(Order selected)
     {
         if (Vm.Service.CurrentUser is null) throw new UnauthorizedAccessException("Entre novamente no sistema.");
-        var order = Vm.Service.Snapshot.Orders.FirstOrDefault(o => o.Id == selected.Id) ?? throw new InvalidOperationException("Pedido não encontrado.");
-        var dialog = new FormDialog(this, $"Pedido {order.NumberLabel}", $"{order.Date:dd/MM/yyyy HH:mm} • {order.TypeLabel} • {order.StatusLabel}", "Fechar");
-        dialog.Info($"Cliente: {order.CustomerName}\nTelefone: {(order.Phone.Length > 0 ? order.Phone : "Não informado")}\n{(order.Delivery ? "Entrega: " + order.Address : "Retirada no balcão")}");
-        foreach (var line in order.Lines) dialog.Info($"{line.ProductName}\n{line.Quantity:0.###} {line.Unit} × {line.UnitPrice:C2} = {line.GrossTotal:C2}");
-        dialog.Info($"Subtotal: {order.Lines.Sum(l => l.GrossTotal):C2}\nDesconto: {order.Discount:C2}\nEntrega: {order.DeliveryFee:C2}\nTotal: {order.Total:C2}");
-        if (order.Notes.Length > 0) dialog.Info($"Observações: {order.Notes}");
-        if (order.IsOpen) dialog.Info("Os produtos estão reservados. Use Receber no PDV para registrar o pagamento e concluir o pedido.");
-        return dialog;
+        var state = Vm.Service.Snapshot;
+        var order = state.Orders.FirstOrDefault(o => o.Id == selected.Id) ?? throw new InvalidOperationException("Pedido não encontrado.");
+        return new OrderDetailsWindow(this, order, state);
     }
     internal FormDialog CreateOrderStatusDialog(Order selected)
     {

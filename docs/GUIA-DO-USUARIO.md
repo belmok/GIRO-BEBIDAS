@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.6.0
+# Guia do Giro Bebidas — versão 1.7.0
 
 ## Instalação e primeiro acesso
 

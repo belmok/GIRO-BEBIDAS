@@ -115,7 +115,8 @@ public partial class MainWindow : Window
             Vm.Search = ""; ProductSearch.Focus();
         });
     }
-    private void ClearCart_Click(object sender, RoutedEventArgs e) { if (Vm.Cart.Count == 0 || Confirm("Limpar os produtos da venda atual? O pedido salvo, se houver, continuará disponível.")) Vm.ClearCart(); }
+    private void ClearCart_Click(object sender, RoutedEventArgs e) { if (Vm.Cart.Count == 0 || CreateClearCartConfirmation().ShowDialog() == true) Vm.ClearCart(); }
+    internal ConfirmationWindow CreateClearCartConfirmation() => new(this, "Limpar venda atual", "Deseja retirar os produtos da venda atual? Você pode começar uma nova venda depois de limpar.", "Limpar venda") { NoticeText = "Pedidos já salvos continuam no histórico. Esta ação não cancela pedidos nem altera o estoque." };
     private void NewProduct_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(new(), false));
     private void EditProduct_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(Require(Vm.SelectedStock, "um produto").Product, true));
     private void StockSortDirection_Click(object sender, RoutedEventArgs e) => Vm.StockSortDescending = !Vm.StockSortDescending;
@@ -157,18 +158,12 @@ public partial class MainWindow : Window
     }
     private void EditStockRow_Click(object sender, RoutedEventArgs e) => Guard(() => ProductForm(StockProduct(sender), true));
     private void StockDetails_Click(object sender, RoutedEventArgs e) => Guard(() => CreateStockDetailsDialog(StockProduct(sender)).ShowDialog());
-    internal FormDialog CreateStockDetailsDialog(Product product)
+    internal ProductDetailsWindow CreateStockDetailsDialog(Product product)
     {
         if (!Vm.Service.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
         var state = Vm.Service.Snapshot;
-        var d = new FormDialog(this, "Detalhes do produto", product.Name, "Fechar");
-        d.Photo(PhotoTools.Decode(product.PhotoBase64) ?? BeverageArt.Create(product));
-        d.Info($"Código: {product.Code}\nCódigo de barras: {(product.Barcode.Length > 0 ? product.Barcode : "Não informado")}\nCategoria: {product.Category}\nSituação: {(product.Active ? "Ativo" : "Inativo")}");
-        d.Info($"Venda: {product.Price:C2} / {product.Unit}\nCusto: {product.Cost:C2}\nEstoque físico: {product.Stock:0.###}\nReservado: {StoreService.Reserved(state, product.Id):0.###}\nLivre: {StoreService.Available(state, product):0.###}\nEstoque mínimo: {product.MinimumStock:0.###}");
-        d.Info(product.WholesaleMinimum > 0 ? $"Atacado: {product.WholesalePrice:C2} a partir de {product.WholesaleMinimum:0.###} {product.Unit}." : "Preço de atacado desativado.");
-        d.Info(product.Description.Length > 0 ? product.Description : "Descrição não informada.");
-        d.Info($"NCM: {product.Tax.Ncm}\nCEST: {product.Tax.Cest}\nCFOP: {product.Tax.Cfop}");
-        return d;
+        var fresh = state.Products.FirstOrDefault(p => p.Id == product.Id) ?? throw new InvalidOperationException("Produto não encontrado.");
+        return new ProductDetailsWindow(this, fresh, StoreService.Reserved(state, fresh.Id));
     }
     private void DuplicateStock_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
@@ -283,24 +278,8 @@ public partial class MainWindow : Window
         if (!Vm.CanSell) throw new InvalidOperationException("Adicione produtos à venda.");
         if (!Vm.CashIsOpen) { OpenCash_Click(sender, e); if (!Vm.Service.Snapshot.CashSessions.Any(c => c.ClosedAt is null)) return; }
         if (Vm.Discount < 0 || Vm.Discount > Vm.Subtotal || Vm.DeliveryFee < 0) throw new InvalidOperationException("Confira o desconto e a taxa de entrega.");
-        var d = new FormDialog(this, "Finalizar venda", $"Total a pagar: {Vm.Total:C2}", "Confirmar venda");
-        d.Choice("method", "Forma de pagamento", Enum.GetValues<PaymentMethod>(), PaymentMethod.Dinheiro);
-        var tendered = d.Number("received", "Recebido em dinheiro (R$)", Vm.Total);
-        var change = d.Info("Troco: R$ 0,00");
-        tendered.TextChanged += (_, _) => { try { change.Text = $"Troco: {Math.Max(0, d.Decimal("received") - Vm.Total):C2}"; } catch { change.Text = "Confira o valor recebido."; } };
-        var customer = Vm.Snapshot.Customers.FirstOrDefault(c => c.Id == Vm.CartCustomer?.Id);
-        d.Info($"Cliente: {customer?.Name ?? "Consumidor final"}");
-        d.Check("delivery", "Entrega no endereço abaixo", Vm.ActiveOrderAddress.Length > 0);
-        d.Text("address", "Endereço de entrega", Vm.ActiveOrderId is null ? customer?.Address ?? "" : Vm.ActiveOrderAddress, enabled: Vm.CanEditCart);
-        d.Text("notes", "Observações", Vm.ActiveOrderNotes, true, Vm.CanEditCart);
         Sale? sale = null;
-        d.Submit = f =>
-        {
-            if (Vm.CanEditCart && f.Checked("delivery") && f.Value("address").Length == 0) throw new InvalidOperationException("Informe o endereço de entrega.");
-            var method = f.Selected<PaymentMethod>("method");
-            sale = Vm.Service.CompleteSale(new(Vm.Draft(), Vm.Discount, Vm.DeliveryFee, Vm.CartCustomer?.Id, method,
-                method == PaymentMethod.Dinheiro ? f.Decimal("received") : Vm.Total, f.Value("notes"), f.Checked("delivery") ? f.Value("address") : "", Vm.ActiveOrderId));
-        };
+        var d = CreateCheckoutDialog(saved => sale = saved);
         if (d.ShowDialog() == true && sale is not null)
         {
             Vm.ClearCart(); Vm.Refresh();
@@ -310,6 +289,42 @@ public partial class MainWindow : Window
                 catch (Exception ex) { Notify($"Venda registrada. Não foi possível imprimir: {ex.Message} Reimprima em Vendas."); }
         }
     });
+    internal FormDialog CreateCheckoutDialog(Action<Sale>? onSale = null)
+    {
+        CommitCartAmounts();
+        if (!Vm.CanSell) throw new InvalidOperationException("Adicione produtos à venda.");
+        if (!Vm.Service.Snapshot.CashSessions.Any(c => c.ClosedAt is null)) throw new InvalidOperationException("Abra o caixa antes de finalizar a venda.");
+        if (Vm.Discount < 0 || Vm.Discount > Vm.Subtotal || Vm.DeliveryFee < 0) throw new InvalidOperationException("Confira o desconto e a taxa de entrega.");
+        var d = new FormDialog(this, "Finalizar venda", $"Total a pagar: {Vm.Total:C2}", "Confirmar venda");
+        d.Summary("Resumo da venda", [("Subtotal", Vm.Subtotal.ToString("C2")), ("Desconto", Vm.Discount.ToString("C2")), ("Entrega", Vm.DeliveryFee.ToString("C2")), ("Total a pagar", Vm.Total.ToString("C2"))]);
+        var options = Enum.GetValues<PaymentMethod>().Select(method => new PaymentChoice(method, Labels.Payment(method))).ToList();
+        var payment = d.Choice("method", "Forma de pagamento", options, options.First(), nameof(PaymentChoice.Name));
+        var tendered = d.Number("received", "Recebido em dinheiro (R$)", Vm.Total);
+        var change = d.Info("Troco: R$ 0,00");
+        void UpdateChange()
+        {
+            bool cash = payment.SelectedItem is PaymentChoice { Method: PaymentMethod.Dinheiro };
+            tendered.IsEnabled = cash;
+            if (!cash) { change.Text = "Troco não se aplica a esta forma de pagamento."; return; }
+            try { change.Text = $"Troco: {Math.Max(0, d.Decimal("received") - Vm.Total):C2}"; } catch { change.Text = "Confira o valor recebido."; }
+        }
+        tendered.TextChanged += (_, _) => UpdateChange(); payment.SelectionChanged += (_, _) => UpdateChange();
+        var customer = Vm.Snapshot.Customers.FirstOrDefault(c => c.Id == Vm.CartCustomer?.Id);
+        d.Info($"Cliente: {customer?.Name ?? "Consumidor final"}");
+        d.Check("delivery", "Entrega no endereço abaixo", Vm.ActiveOrderAddress.Length > 0).IsEnabled = Vm.CanEditCart;
+        d.Text("address", "Endereço de entrega", Vm.ActiveOrderId is null ? customer?.Address ?? "" : Vm.ActiveOrderAddress, enabled: Vm.CanEditCart);
+        d.Text("notes", "Observações", Vm.ActiveOrderNotes, true, Vm.CanEditCart);
+        d.Submit = f =>
+        {
+            if (Vm.CanEditCart && f.Checked("delivery") && f.Value("address").Length == 0) throw new InvalidOperationException("Informe o endereço de entrega.");
+            var method = f.Selected<PaymentChoice>("method").Method;
+            var sale = Vm.Service.CompleteSale(new(Vm.Draft(), Vm.Discount, Vm.DeliveryFee, Vm.CartCustomer?.Id, method,
+                method == PaymentMethod.Dinheiro ? f.Decimal("received") : Vm.Total, f.Value("notes"), f.Checked("delivery") ? f.Value("address") : "", Vm.ActiveOrderId));
+            onSale?.Invoke(sale);
+        };
+        return d;
+    }
+    internal sealed record PaymentChoice(PaymentMethod Method, string Name);
     private void SaveOrder_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         CommitCartAmounts();
@@ -368,13 +383,18 @@ public partial class MainWindow : Window
     });
     private void CloseCash_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
+        var d = CreateCloseCashDialog(); if (d.ShowDialog() == true) Notify("Caixa fechado. O resumo está disponível no histórico.");
+    });
+    internal FormDialog CreateCloseCashDialog()
+    {
         var state = Vm.Service.Snapshot; var cash = state.CashSessions.FirstOrDefault(c => c.ClosedAt is null) ?? throw new InvalidOperationException("Não há caixa aberto.");
         var totals = StoreService.SummarizeCash(state, cash.Id);
         var d = new FormDialog(this, "Fechar caixa", "Conte o dinheiro físico. Confira as outras formas de pagamento.", "Confirmar fechamento");
-        d.Info($"Dinheiro esperado: {totals.Expected:C2}\nPix: {totals.Pix:C2}\nDébito: {totals.Debit:C2}\nCrédito: {totals.Credit:C2}\nVendas em fiado: {totals.CreditSales:C2}");
+        d.Summary("Resumo do caixa", [("Dinheiro esperado", totals.Expected.ToString("C2")), ("Pix", totals.Pix.ToString("C2")), ("Débito", totals.Debit.ToString("C2")), ("Crédito", totals.Credit.ToString("C2")), ("Vendas em fiado", totals.CreditSales.ToString("C2"))]);
         d.Number("counted", "Dinheiro contado (R$)"); d.Text("notes", "Observações do fechamento", "", true);
-        d.Submit = f => Vm.Service.CloseCash(f.Decimal("counted"), f.Value("notes")); if (d.ShowDialog() == true) Notify("Caixa fechado. O resumo está disponível no histórico.");
-    });
+        d.Submit = f => Vm.Service.CloseCash(f.Decimal("counted"), f.Value("notes"));
+        return d;
+    }
     private void ReceiveDebt_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         var c = Require(Vm.SelectedCustomer, "um cliente");

@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.7.0 — 12/10/2026
+
+Janelas de detalhes de produtos e pedidos redesenhadas com cartões, preços e totais destacados, foto e dados organizados, botão único de fechar e rolagem controlada. Confirmação de limpar a venda usa o padrão visual do Giro Bebidas e mantém Cancelar como escolha padrão. Formulários de finalização da venda, fechamento de caixa e demais cadastros recebem cabeçalho, cartões de resumo, maior contraste e rodapé fixo.
+
+Formas de pagamento usam nomes em português. Recebido em dinheiro fica desativado nos pagamentos que não usam dinheiro. Esc fecha uma lista aberta antes de cancelar o formulário. Dados de entrega de um pedido salvo permanecem protegidos durante o pagamento.
+
+Compilação sem avisos ou erros. Conferência nativa das cinco janelas, descrições longas, opções de cancelar/fechar/Esc, escolha padrão de cancelar, Pix, pagamento insuficiente, troco e fechamento com contagem inválida e válida. Consulta e limpeza preservam pedidos e dados; 273 verificações de negócio e 47 verificações de publicação aprovadas em pastas isoladas.
+
 ## 1.6.0 — 12/10/2026
 
 Pedidos e entregas redesenhados no padrão do programa: pesquisa por pedido, cliente, telefone e endereço, filtros de período e situação, paginação e indicadores coloridos para entrega, retirada e andamento. Menu de cada pedido permite consultar detalhes, imprimir, alterar a situação e receber no PDV. Pedidos encerrados permanecem no histórico e bloqueiam alteração/recebimento; reservas e preços do pedido são preservados.
