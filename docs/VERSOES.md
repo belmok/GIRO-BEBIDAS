@@ -1,10 +1,16 @@
 # Controle de versões
 
+## 1.5.2 — 12/10/2026
+
+Conferência visual usa a largura real da janela, respeitando a área disponível em computadores com telas menores. O limite entre duas e quatro colunas é verificado separadamente, e valores e cartões continuam sendo conferidos dentro da área renderizada. O diagnóstico de falhas visuais passa a aparecer também no registro da verificação do pacote.
+
+Versão pública do Controle do caixa com cartões ilustrados, histórico e português brasileiro. As tags 1.5.0 e 1.5.1, cuja publicação foi interrompida por diferenças do ambiente de conferência, permanecem no histórico.
+
 ## 1.5.1 — 12/10/2026
 
 Aplicativo usa português brasileiro também quando o Windows está configurado em outro idioma. A data, os valores nos formulários e os relatórios usam a mesma cultura da interface. Conferência dos cartões aceita diferenças de espaço na formatação monetária entre versões do Windows, mantendo a verificação dos valores.
 
-Esta é a versão pública do novo Controle do caixa com cartões ilustrados e histórico. A publicação de 1.5.0 foi interrompida pela conferência do idioma no ambiente do GitHub; sua tag permanece no histórico de versões.
+A publicação de 1.5.0 foi interrompida pela conferência do idioma no ambiente do GitHub; sua tag permanece no histórico de versões.
 
 ## 1.5.0 — 12/10/2026
 

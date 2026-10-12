@@ -20,7 +20,11 @@ function Invoke-GiroCheck([string]$TaskExecutable, [string[]]$TaskArguments) {
     foreach ($taskArgument in $TaskArguments) { $taskStart.ArgumentList.Add($taskArgument) }
     $taskProcess = [System.Diagnostics.Process]::Start($taskStart)
     if (-not $taskProcess.WaitForExit(45000)) { $taskProcess.Kill($true); throw 'A verificação excedeu o tempo esperado.' }
-    if ($taskProcess.ExitCode -ne 0) { throw ('A verificação do programa falhou: ' + $TaskExecutable) }
+    if ($taskProcess.ExitCode -ne 0) {
+        $taskSmokeError = Join-Path $taskData 'smoke-error.txt'
+        if ([IO.File]::Exists($taskSmokeError)) { Write-Output ([IO.File]::ReadAllText($taskSmokeError)) }
+        throw ('A verificação do programa falhou: ' + $TaskExecutable)
+    }
 }
 Invoke-GiroCheck -TaskExecutable (Join-Path $taskRelease 'InstalarGiroBebidas.exe') -TaskArguments @('--ui-smoke', (Join-Path $taskScreens '13-instalador.png'))
 Write-Output 'OK: tela do instalador independente.'

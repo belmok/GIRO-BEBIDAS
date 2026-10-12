@@ -108,8 +108,12 @@ public static partial class SmokeRunner
                 if (((SolidColorBrush)converter.Convert(amount, typeof(Brush), "Foreground", System.Globalization.CultureInfo.CurrentCulture)).Color != (Color)ColorConverter.ConvertFromString(color))
                     throw new InvalidOperationException("Falta, sobra e conferência correta precisam ter cores diferentes.");
             Capture(window, Path.Combine(output, "49-controle-caixa-colorido.png"));
-            AssertCashCardBounds(window, 4);
-            window.Width = 1200; window.Height = 760; FlushLayout(window); AssertCashCardBounds(window, 2);
+            var columns = new CashCardColumnsConverter();
+            foreach (var (width, expectedColumns) in new[] { (1200d, 2), (1349d, 2), (1350d, 4), (1480d, 4) })
+                if ((int)columns.Convert(width, typeof(int), "", System.Globalization.CultureInfo.CurrentCulture) != expectedColumns)
+                    throw new InvalidOperationException("Os cartões precisam mudar entre duas e quatro colunas no limite de largura definido.");
+            AssertCashCardBounds(window);
+            window.Width = 1200; window.Height = 760; FlushLayout(window); AssertCashCardBounds(window);
             Capture(window, Path.Combine(output, "50-controle-caixa-tela-menor.png"));
             window.CashPageScroll.ScrollToEnd(); FlushLayout(window);
             Capture(window, Path.Combine(output, "52-caixa-movimentacoes.png"));
@@ -123,11 +127,12 @@ public static partial class SmokeRunner
         }
         finally { window.Vm.ClearCart(); if (window.IsVisible) window.Close(); }
     }
-    private static void AssertCashCardBounds(MainWindow window, int columns)
+    private static void AssertCashCardBounds(MainWindow window)
     {
         var cards = new[] { window.CashMoneyCard, window.CashPixCard, window.CashDebitCard, window.CashCreditCard };
         var values = new[] { window.CashMoneyValue, window.CashPixValue, window.CashDebitValue, window.CashCreditValue };
-        if (cards[0].Parent is not UniformGrid grid || grid.Columns != columns) throw new InvalidOperationException("Os cartões precisam adaptar as colunas à largura da janela.");
+        int expectedColumns = window.ActualWidth >= 1350 ? 4 : 2;
+        if (cards[0].Parent is not UniformGrid grid || grid.Columns != expectedColumns) throw new InvalidOperationException($"Os cartões precisam adaptar as colunas à largura real da janela ({window.ActualWidth:0.##}).");
         for (int i = 0; i < cards.Length; i++)
         {
             var point = values[i].TranslatePoint(new Point(), cards[i]);
