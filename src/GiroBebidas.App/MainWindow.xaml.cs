@@ -496,7 +496,7 @@ public partial class MainWindow : Window
     });
     private void PrintSale_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintSale(this, Vm.Snapshot, Require(Vm.SelectedSale, "uma venda")));
     private void PrintOrder_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintOrder(this, Vm.Snapshot, Require(Vm.SelectedOrder, "um pedido")));
-    private void PrintCash_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintCash(this, Vm.Snapshot, Require(Vm.SelectedCash, "um caixa")));
+    private void PrintCash_Click(object sender, RoutedEventArgs e) => CashRowPrint_Click(sender, e);
     private static string Csv(string value)
     {
         if (value.Length > 0 && "=+-@".Contains(value[0])) value = "'" + value;

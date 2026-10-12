@@ -6,7 +6,7 @@ Aplicativo para Windows, com identidade e depósito fictícios, desenvolvido em 
 
 ## Executar a versão pronta
 
-Abra `InstalarGiroBebidas.exe` na pasta principal, ou `artifacts/distribuicao/1.4.3/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
+Abra `InstalarGiroBebidas.exe` na pasta principal, ou `artifacts/distribuicao/1.5.0/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
 
 Também é possível abrir `GiroBebidas.exe` diretamente ou extrair o pacote portátil. O desinstalador atua sobre instalações feitas pelo instalador; para a versão portátil, basta remover os executáveis. Os dados ficam em outra pasta.
 

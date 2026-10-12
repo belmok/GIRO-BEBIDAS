@@ -30,6 +30,24 @@ public sealed class PageVisibilityConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Equals(value?.ToString(), parameter?.ToString()) ? Visibility.Visible : Visibility.Collapsed;
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+public sealed class CashDifferenceToneConverter : IValueConverter
+{
+    private static readonly Brush Negative = Tone("#B4483E"), Positive = Tone("#906617"), Balanced = Tone("#187B52");
+    private static readonly Brush NegativeBackground = Tone("#FFF4F1"), PositiveBackground = Tone("#FFF1D8"), BalancedBackground = Tone("#E3F5E7");
+    private static Brush Tone(string hex)
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); brush.Freeze(); return brush;
+    }
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not decimal difference) return DependencyProperty.UnsetValue;
+        bool background = string.Equals(parameter?.ToString(), "background", StringComparison.OrdinalIgnoreCase);
+        return background
+            ? difference < 0 ? NegativeBackground : difference > 0 ? PositiveBackground : BalancedBackground
+            : difference < 0 ? Negative : difference > 0 ? Positive : Balanced;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
 public record NavItem(string Key, string Title, string Icon);
 public record CategoryChoice(string Name, string Icon);
 public class ProductTile

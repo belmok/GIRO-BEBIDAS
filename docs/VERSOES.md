@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.5.0 — 12/10/2026
+
+Controle do caixa redesenhado com cartões ilustrados por ondas e cores para dinheiro, Pix, débito e crédito. Os cartões exibem o caixa aberto e permanecem independentes do filtro do histórico. Histórico de caixas e suprimentos/sangrias recebem filtros por período, indicadores e mensagens quando não há registros.
+
+Menu de cada caixa com detalhes, impressão de fechamento e exportação de relatório CSV. A impressão de fechamento exige caixa encerrado; detalhes e exportação também podem consultar caixas abertos, sem apresentar contagem ou diferença de fechamento antes da conferência. Histórico de caixas encerrados permanece preservado.
+
+Conferência nativa aprovada em 1480 × 940 e 1200 × 760: cartões em quatro e duas colunas, valores de vendas e recebimentos por pagamento, fundo e movimentações, limites de datas, estados vazios, seleção e menu. Detalhes e CSV consultados sem alterar registros; exportação preserva números negativos e protege nomes e observações ao abrir em planilha. Compilação sem avisos ou erros; testes somente em dados isolados.
+
 ## 1.4.3 — 12/10/2026
 
 O catálogo de produtos da frente de caixa passa a usar a mesma rolagem reduzida e proporcional ao touchpad, nas visualizações em grade e lista. Gestos consecutivos são acumulados e os limites da área são respeitados. Fotos, pesquisa, filtros e inclusão de produtos na venda permanecem disponíveis.

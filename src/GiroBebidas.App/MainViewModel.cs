@@ -60,12 +60,17 @@ public sealed class MainViewModel : Observable
     public List<ProfitRow> ProfitRows { get; private set; } = [];
     public List<CashSession> CashSessions { get; private set; } = [];
     public List<CashMovement> CashMovements { get; private set; } = [];
+    public List<string> CashPeriodOptions { get; } = ["Hoje", "Últimos 7 dias", "Últimos 30 dias", "Todo o período"];
+    public string CashHistoryEmptyVisibility => CashSessions.Count == 0 ? "Visible" : "Collapsed";
+    public string CashMovementsEmptyVisibility => CashMovements.Count == 0 ? "Visible" : "Collapsed";
+    public bool CashHasSelectedClosed => SelectedCash?.ClosedAt is not null;
     public List<StockMovement> StockMovements { get; private set; } = [];
     public List<AuditEntry> AuditEntries { get; private set; } = [];
     public List<PrinterProfile> Printers { get; private set; } = [];
     public List<ScaleProfile> Scales { get; private set; } = [];
     public CashSummary? CashSummary { get; private set; }
     public bool CashIsOpen => Snapshot.CashSessions.Any(c => c.ClosedAt is null);
+    public bool CashCanOpen => !CashIsOpen;
     public string CashOpenedLabel => Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null) is { } c ? $"Aberto por {c.OpenedBy}, em {c.OpenedAt:dd/MM 'às' HH:mm}" : "Abra um caixa para começar a registrar vendas.";
     public string PrinterDefaultLabel => Snapshot.Printers.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultPrinterId)?.Name ?? "Nenhuma impressora padrão";
     public string ScaleDefaultLabel => Snapshot.Scales.FirstOrDefault(p => p.Id == Snapshot.Settings.DefaultScaleId)?.Name ?? "Pesagem manual";
@@ -91,11 +96,13 @@ public sealed class MainViewModel : Observable
     public Order? SelectedOrder { get; set; }
     public Sale? SelectedSale { get; set; }
     public UserAccount? SelectedUser { get; set; }
-    public CashSession? SelectedCash { get; set; }
+    private CashSession? selectedCash;
+    public CashSession? SelectedCash { get => selectedCash; set { if (Set(ref selectedCash, value)) Changed(nameof(CashHasSelectedClosed)); } }
     public PrinterProfile? SelectedPrinter { get; set; }
     public ScaleProfile? SelectedScale { get; set; }
     private string page = "PDV", search = "", category = "Todos", stockSearch = "", clientSearch = "", reportPeriod = "Últimos 30 dias", message = "";
     private string stockCategory = "Todas as categorias", stockSort = "Nome do produto";
+    private string cashPeriod = "Últimos 30 dias";
     private bool stockSortDescending;
     private decimal discount, deliveryFee;
     private bool isProductsList;
@@ -110,6 +117,7 @@ public sealed class MainViewModel : Observable
     public string ClientSearch { get => clientSearch; set { if (Set(ref clientSearch, value)) FilterClients(); } }
     public string Category { get => category; set { if (Set(ref category, value)) FilterProducts(); } }
     public string ReportPeriod { get => reportPeriod; set { if (Set(ref reportPeriod, value)) BuildReport(); } }
+    public string CashPeriod { get => cashPeriod; set { if (Set(ref cashPeriod, value)) FilterCash(); } }
     public string Message { get => message; set => Set(ref message, value); }
     public bool IsProductsList { get => isProductsList; set { if (Set(ref isProductsList, value)) { Changed(nameof(GridViewVisibility)); Changed(nameof(ListViewVisibility)); } } }
     public double ProductCardWidth { get => productCardWidth; set => Set(ref productCardWidth, value); }
@@ -191,6 +199,18 @@ public sealed class MainViewModel : Observable
         Changed(nameof(StockCount)); Changed(nameof(StockEmptyVisibility));
     }
     private void FilterClients() { CustomerRows = Snapshot.Customers.Where(c => Matches(ClientSearch.Trim(), c.Name, c.Phone, c.Document)).OrderBy(c => c.Name).Select(c => new CustomerRow(c, StoreService.Balance(Snapshot, c.Id))).ToList(); Changed(nameof(CustomerRows)); }
+    private void FilterCash()
+    {
+        Guid? selectedId = SelectedCash?.Id;
+        DateTime today = DateTime.Today;
+        DateTime? firstDate = CashPeriod switch { "Hoje" => today, "Últimos 7 dias" => today.AddDays(-6), "Últimos 30 dias" => today.AddDays(-29), _ => null };
+        bool InPeriod(DateTimeOffset date) => firstDate is null || (date.LocalDateTime.Date >= firstDate.Value && date.LocalDateTime.Date <= today);
+        CashSessions = Snapshot.CashSessions.Where(c => InPeriod(c.OpenedAt)).OrderByDescending(c => c.OpenedAt).ToList();
+        CashMovements = Snapshot.CashMovements.Where(c => InPeriod(c.Date)).OrderByDescending(c => c.Date).ToList();
+        Changed(nameof(CashSessions)); Changed(nameof(CashMovements));
+        SelectedCash = CashSessions.FirstOrDefault(c => c.Id == selectedId);
+        Changed(nameof(CashHistoryEmptyVisibility)); Changed(nameof(CashMovementsEmptyVisibility));
+    }
     private void BuildReport()
     {
         DateTimeOffset? from = ReportPeriod switch { "Hoje" => new DateTimeOffset(DateTime.Today), "Últimos 7 dias" => new DateTimeOffset(DateTime.Today.AddDays(-6)), "Últimos 30 dias" => new DateTimeOffset(DateTime.Today.AddDays(-29)), _ => null };
@@ -208,14 +228,14 @@ public sealed class MainViewModel : Observable
         CustomerOptions = [new(null, "Consumidor final"), .. Snapshot.Customers.OrderBy(c => c.Name).Select(c => new CustomerChoice(c.Id, c.Name))];
         CartCustomer = CustomerOptions.FirstOrDefault(c => c.Id == customerId) ?? CustomerOptions[0];
         Orders = Snapshot.Orders.OrderByDescending(o => o.Date).ToList(); Sales = Snapshot.Sales.OrderByDescending(v => v.Date).ToList();
-        Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); CashSessions = Snapshot.CashSessions.OrderByDescending(c => c.OpenedAt).ToList();
-        CashMovements = Snapshot.CashMovements.OrderByDescending(c => c.Date).ToList(); StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
+        Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); FilterCash();
+        StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
         RecentStockMovements = StockMovements.Take(5).Select(m => new StockMovementRow(m)).ToList(); Changed(nameof(RecentStockMovements));
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
         FilterProducts(); FilterStock(); FilterClients(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
-        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(CashSessions), nameof(CashMovements), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
+        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }
 }

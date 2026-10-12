@@ -11,7 +11,7 @@ using GiroBebidas.Core;
 
 namespace GiroBebidas.App;
 
-public static class SmokeRunner
+public static partial class SmokeRunner
 {
     public static void Run(StoreService service, string output)
     {
@@ -98,6 +98,7 @@ public static class SmokeRunner
             CheckProductUi(window, output);
             CheckCartAmounts(window);
             CheckCashStatus(output);
+            CheckCashDashboard(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
             CheckComboBoxScrolling(window, output);

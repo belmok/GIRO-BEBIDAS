@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.4.3
+# Guia do Giro Bebidas — versão 1.5.0
 
 ## Instalação e primeiro acesso
 
@@ -66,7 +66,11 @@ Em **Clientes e fiados**, consulte o saldo devedor e o limite. Selecione o clien
 
 ## Caixa, histórico e lucro
 
-**Suprimento** adiciona dinheiro físico, e **sangria** registra retirada. Ambas exigem motivo. **Fechar caixa** mostra o resumo por pagamento; informe o dinheiro contado. O fechamento registra a diferença entre o esperado e o contado. Selecione um caixa no histórico para imprimir o resumo.
+Em **Controle do caixa**, os cartões ilustrados mostram dinheiro em verde, Pix em azul, débito em violeta e crédito em âmbar. O dinheiro inclui fundo, vendas, recebimentos de fiado, suprimentos e sangrias. Os demais cartões incluem vendas e recebimentos por forma de pagamento. Na janela menor, os cartões ficam em duas linhas.
+
+**Suprimento** adiciona dinheiro físico, e **sangria** registra retirada. Ambas exigem motivo. **Fechar caixa** mostra o resumo por pagamento; informe o dinheiro contado. O fechamento registra a diferença entre o esperado e o contado: faltas aparecem em vermelho, sobras em âmbar e conferência sem diferença em verde.
+
+Escolha **Hoje**, **Últimos 7 dias**, **Últimos 30 dias** ou **Todo o período** para filtrar o histórico e as movimentações. O filtro não altera os totais do caixa aberto. No menu de três pontos de cada caixa, use **Ver detalhes**, **Imprimir fechamento** ou **Exportar relatório** em CSV. A impressão exige caixa encerrado; contagem e diferença ficam disponíveis após o fechamento. Os registros encerrados permanecem preservados.
 
 Em **Vendas**, consulte detalhes, reimprima o cupom ou exporte CSV. O administrador pode cancelar uma venda no caixa de origem ainda aberto, desde que não tenha recebimento de fiado. O estoque volta e os totais de caixa são ajustados. Não se cancela a mesma venda duas vezes.
 
