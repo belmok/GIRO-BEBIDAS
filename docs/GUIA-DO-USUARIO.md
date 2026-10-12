@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.5.2
+# Guia do Giro Bebidas — versão 1.6.0
 
 ## Instalação e primeiro acesso
 
@@ -57,6 +57,10 @@ Ao confirmar, venda, estoque e caixa são gravados juntos. O campo de observaç�
 ## Pedidos e entregas
 
 Monte os produtos no PDV e clique **Salvar como pedido**. Escolha cliente, entrega ou retirada, endereço e observações. O pedido reserva o estoque e pode ser acompanhado em **Pedidos e entregas**.
+
+Use a pesquisa para encontrar número do pedido, cliente, telefone ou endereço. Combine os filtros de período e situação. No rodapé, escolha 10, 20 ou 50 pedidos por página e use as setas para navegar. O histórico completo e as reservas não são alterados pelos filtros.
+
+O menu de três pontos de cada pedido oferece **Ver detalhes**, **Imprimir pedido**, **Alterar situação** e **Receber no PDV**. As situações e os tipos de atendimento aparecem com cores. Pedidos concluídos ou cancelados continuam disponíveis para consulta e impressão, com alteração e recebimento desativados.
 
 Use **Alterar situação** para marcar pendente, preparando, em entrega ou cancelado. Para receber e concluir, selecione o pedido e clique **Receber no PDV**. Os produtos e preços ficam preservados; finalize o pagamento normalmente. Pedido cancelado libera sua reserva. O comprovante de pedido não comprova pagamento.
 

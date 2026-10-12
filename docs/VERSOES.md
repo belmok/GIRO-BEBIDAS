@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.6.0 — 12/10/2026
+
+Pedidos e entregas redesenhados no padrão do programa: pesquisa por pedido, cliente, telefone e endereço, filtros de período e situação, paginação e indicadores coloridos para entrega, retirada e andamento. Menu de cada pedido permite consultar detalhes, imprimir, alterar a situação e receber no PDV. Pedidos encerrados permanecem no histórico e bloqueiam alteração/recebimento; reservas e preços do pedido são preservados.
+
+Publicações do GitHub passam a exigir notas próprias da versão com novidades, correções e verificações. As instruções de instalação ficam ao final. Notas ausentes, de outra versão ou incompletas impedem a publicação; rascunhos retomados recebem as notas atualizadas.
+
+Compilação sem avisos ou erros, 273 verificações de negócio e 47 verificações das notas/publicação aprovadas. Conferência nativa validou busca, limites de datas, páginas de 10/20/50, seleção, menus, alteração de situação, detalhes e recebimento no PDV com preços históricos, quantidades, cliente, desconto e entrega preservados. Controles acessíveis em janela menor; nenhum dado real foi alterado.
+
 ## 1.5.2 — 12/10/2026
 
 Conferência visual usa a largura real da janela, respeitando a área disponível em computadores com telas menores. O limite entre duas e quatro colunas é verificado separadamente, e valores e cartões continuam sendo conferidos dentro da área renderizada. O diagnóstico de falhas visuais passa a aparecer também no registro da verificação do pacote.

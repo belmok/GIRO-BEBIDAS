@@ -42,7 +42,19 @@ Se `origin` já existir, use o endereço correto já configurado. Não substitua
 
 O arquivo `.github/workflows/publicar.yml` executa a publicação quando uma tag estável `v*` é enviada. Ele instala o SDK definido em `global.json` (**8.0.425**), compila, executa as verificações, gera o instalador completo e verifica o pacote, as telas, a instalação e a remoção. Só depois prepara a Release.
 
-Para uma próxima versão, ajuste `Version`, `AssemblyVersion` e `FileVersion` em `Directory.Build.props`. Registre as alterações e envie o commit. Crie uma tag exatamente igual a `v` mais o campo `Version`, por exemplo `v1.2.0` quando `Version` for `1.2.0`, e envie essa tag:
+Cada atualização deve informar o que mudou. Antes de publicar, crie `docs/notas-versoes/<versão>.md`, usando a versão exata que será enviada. O arquivo começa com `# Giro Bebidas <versão>` e contém as seções `## Novidades`, `## Correções` e `## Verificações`. Descreva as funções adicionadas, os problemas corrigidos e os testes que realmente passaram. Se não houver novidades ou correções, explique isso na seção correspondente; não deixe a seção vazia nem use lembretes como “TODO” ou “a definir”. Informe também as limitações materiais das verificações.
+
+As informações específicas da versão aparecem primeiro na Release e na consulta de atualizações do PDV. O script acrescenta as instruções de instalação ao final. A publicação é interrompida se faltar o arquivo, se o título informar outra versão ou se faltar conteúdo nas seções obrigatórias. Ao retomar um rascunho, o script atualiza também suas notas, evitando manter descrições genéricas de uma tentativa anterior.
+
+Confira a geração e a validação das notas com dados isolados:
+
+```powershell
+./scripts/Testar-Notas-Versao.ps1
+```
+
+Depois de gerar o instalador, `./scripts/Testar-Notas-Versao.ps1 -ValidarFluxoPublicacao` também confere a criação de Release, a retomada de rascunho, o bloqueio de notas remotas divergentes e a proteção de versões já publicadas. Esses cenários usam uma cópia do instalador e respostas locais simuladas, sem enviar arquivos nem acessar o GitHub.
+
+Para uma próxima versão, ajuste `Version`, `AssemblyVersion` e `FileVersion` em `Directory.Build.props` e escreva suas notas. Registre as alterações e envie o commit. Crie uma tag exatamente igual a `v` mais o campo `Version`, por exemplo `v1.2.0` quando `Version` for `1.2.0`, e envie essa tag:
 
 ```powershell
 git tag v1.2.0
@@ -74,12 +86,12 @@ Depois de registrar o código, gere e confira o pacote:
 ./scripts/Publicar-GitHub.ps1
 ```
 
-A última chamada confere os arquivos e mostra o que será publicado, sem realizar envios. Depois que o commit e a tag correspondente já estiverem no GitHub, execute:
+A última chamada valida as notas específicas da versão, confere os arquivos e mostra o que será publicado, sem realizar envios. Depois que o commit e a tag correspondente já estiverem no GitHub, execute:
 
 ```powershell
 ./scripts/Publicar-GitHub.ps1 -Publicar
 ```
 
-O script verifica o SHA-256, a versão do instalador, o commit usado na compilação e a tag remota. Ele envia os quatro arquivos para um rascunho, confere os anexos e então publica a Release estável. Releases já publicadas não são substituídas; crie uma nova versão para novas alterações. Não execute a publicação manual ao mesmo tempo que o workflow automático da mesma tag.
+O script verifica as notas, o SHA-256, a versão do instalador, o commit usado na compilação e a tag remota. Ele prepara a descrição com novidades, correções e verificações, envia os quatro arquivos para um rascunho, confere os anexos e então publica a Release estável. Releases já publicadas não têm seus arquivos substituídos; crie uma nova versão para novas alterações. Uma correção apenas na descrição pode ser feita na Release existente sem mudar seus anexos nem sua tag. Não execute a publicação manual ao mesmo tempo que o workflow automático da mesma tag.
 
 A documentação oficial explica a [criação de Releases pelo GitHub CLI](https://cli.github.com/manual/gh_release_create), o [envio de anexos](https://cli.github.com/manual/gh_release_upload) e a [compilação de .NET no GitHub Actions](https://docs.github.com/en/actions/tutorials/build-and-test-code/net).

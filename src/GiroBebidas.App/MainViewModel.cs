@@ -55,6 +55,20 @@ public sealed class MainViewModel : Observable
     public List<CustomerRow> CustomerRows { get; private set; } = [];
     public List<CustomerChoice> CustomerOptions { get; private set; } = [];
     public List<Order> Orders { get; private set; } = [];
+    public List<Order> OrderPageItems { get; private set; } = [];
+    public List<string> OrderPeriodOptions { get; } = ["Hoje", "Últimos 7 dias", "Últimos 30 dias", "Todo o período"];
+    public List<string> OrderStatusOptions { get; } = ["Todas as situações", .. Enum.GetValues<OrderStatus>().Select(Labels.Order)];
+    public List<int> OrderPageSizeOptions { get; } = [10, 20, 50];
+    public int OrderFilteredCount => filteredOrders.Count;
+    public int OrderPageCount => Math.Max(1, (int)Math.Ceiling(OrderFilteredCount / (double)OrderPageSize));
+    public string OrderRangeLabel => OrderFilteredCount == 0 ? "0 pedidos" : $"{(OrderPageNumber - 1) * OrderPageSize + 1}–{Math.Min(OrderPageNumber * OrderPageSize, OrderFilteredCount)} de {OrderFilteredCount} pedido{(OrderFilteredCount == 1 ? "" : "s")}";
+    public string OrderPageLabel => $"Página {OrderPageNumber} de {OrderPageCount}";
+    public string OrderEmptyVisibility => OrderPageItems.Count == 0 ? "Visible" : "Collapsed";
+    public bool OrderCanPrevious => OrderPageNumber > 1;
+    public bool OrderCanNext => OrderPageNumber < OrderPageCount;
+    public bool OrderHasSelection => SelectedOrder is not null;
+    public bool OrderCanChangeStatus => SelectedOrder?.IsOpen == true;
+    public bool OrderCanReceiveSelected => SelectedOrder?.IsOpen == true;
     public List<Sale> Sales { get; private set; } = [];
     public List<UserAccount> Users { get; private set; } = [];
     public List<ProfitRow> ProfitRows { get; private set; } = [];
@@ -93,7 +107,16 @@ public sealed class MainViewModel : Observable
     public string ReportMargin => ReportRevenue == 0 ? "0%" : (ReportProfit / ReportRevenue).ToString("P1");
     public StockRow? SelectedStock { get; set; }
     public CustomerRow? SelectedCustomer { get; set; }
-    public Order? SelectedOrder { get; set; }
+    private Order? selectedOrder;
+    public Order? SelectedOrder
+    {
+        get => selectedOrder;
+        set
+        {
+            if (!Set(ref selectedOrder, value)) return;
+            Changed(nameof(OrderHasSelection)); Changed(nameof(OrderCanChangeStatus)); Changed(nameof(OrderCanReceiveSelected));
+        }
+    }
     public Sale? SelectedSale { get; set; }
     public UserAccount? SelectedUser { get; set; }
     private CashSession? selectedCash;
@@ -103,6 +126,9 @@ public sealed class MainViewModel : Observable
     private string page = "PDV", search = "", category = "Todos", stockSearch = "", clientSearch = "", reportPeriod = "Últimos 30 dias", message = "";
     private string stockCategory = "Todas as categorias", stockSort = "Nome do produto";
     private string cashPeriod = "Últimos 30 dias";
+    private string orderSearch = "", orderPeriod = "Todo o período", orderStatusFilter = "Todas as situações";
+    private int orderPageSize = 10, orderPageNumber = 1;
+    private List<Order> filteredOrders = [];
     private bool stockSortDescending;
     private decimal discount, deliveryFee;
     private bool isProductsList;
@@ -118,6 +144,19 @@ public sealed class MainViewModel : Observable
     public string Category { get => category; set { if (Set(ref category, value)) FilterProducts(); } }
     public string ReportPeriod { get => reportPeriod; set { if (Set(ref reportPeriod, value)) BuildReport(); } }
     public string CashPeriod { get => cashPeriod; set { if (Set(ref cashPeriod, value)) FilterCash(); } }
+    public string OrderSearch { get => orderSearch; set { if (Set(ref orderSearch, value ?? "")) FilterOrders(true); } }
+    public string OrderPeriod { get => orderPeriod; set { if (Set(ref orderPeriod, OrderPeriodOptions.Contains(value) ? value : "Todo o período")) FilterOrders(true); } }
+    public string OrderStatusFilter { get => orderStatusFilter; set { if (Set(ref orderStatusFilter, OrderStatusOptions.Contains(value) ? value : "Todas as situações")) FilterOrders(true); } }
+    public int OrderPageSize { get => orderPageSize; set { if (Set(ref orderPageSize, OrderPageSizeOptions.Contains(value) ? value : 10)) FilterOrders(true); } }
+    public int OrderPageNumber
+    {
+        get => orderPageNumber;
+        set
+        {
+            Guid? selectedId = SelectedOrder?.Id;
+            if (Set(ref orderPageNumber, Math.Clamp(value, 1, OrderPageCount))) UpdateOrderPage(selectedId);
+        }
+    }
     public string Message { get => message; set => Set(ref message, value); }
     public bool IsProductsList { get => isProductsList; set { if (Set(ref isProductsList, value)) { Changed(nameof(GridViewVisibility)); Changed(nameof(ListViewVisibility)); } } }
     public double ProductCardWidth { get => productCardWidth; set => Set(ref productCardWidth, value); }
@@ -130,6 +169,8 @@ public sealed class MainViewModel : Observable
     public ICommand IncrementCommand { get; }
     public ICommand DecrementCommand { get; }
     public ICommand RemoveCommand { get; }
+    public ICommand OrderPreviousPageCommand { get; }
+    public ICommand OrderNextPageCommand { get; }
     public Action<Product>? RequestWeight { get; set; }
     public Action<string>? Notify { get; set; }
 
@@ -142,6 +183,8 @@ public sealed class MainViewModel : Observable
         IncrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed) RequestWeight?.Invoke(line.Product); else AddProduct(line.Product, 1); } }, _ => CanEditCart);
         DecrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed || line.Quantity <= 1) Cart.Remove(line); else line.Quantity--; CartChanged(); } }, _ => CanEditCart);
         RemoveCommand = new RelayCommand(p => { if (p is CartLine line) { Cart.Remove(line); CartChanged(); } }, _ => CanEditCart);
+        OrderPreviousPageCommand = new RelayCommand(_ => { if (OrderCanPrevious) OrderPageNumber--; }, _ => OrderCanPrevious);
+        OrderNextPageCommand = new RelayCommand(_ => { if (OrderCanNext) OrderPageNumber++; }, _ => OrderCanNext);
         Refresh();
     }
     public void AddProduct(Product p, decimal quantity)
@@ -199,6 +242,26 @@ public sealed class MainViewModel : Observable
         Changed(nameof(StockCount)); Changed(nameof(StockEmptyVisibility));
     }
     private void FilterClients() { CustomerRows = Snapshot.Customers.Where(c => Matches(ClientSearch.Trim(), c.Name, c.Phone, c.Document)).OrderBy(c => c.Name).Select(c => new CustomerRow(c, StoreService.Balance(Snapshot, c.Id))).ToList(); Changed(nameof(CustomerRows)); }
+    private void FilterOrders(bool resetPage = false)
+    {
+        Guid? selectedId = SelectedOrder?.Id;
+        DateTime today = DateTime.Today;
+        DateTime? firstDate = OrderPeriod switch { "Hoje" => today, "Últimos 7 dias" => today.AddDays(-6), "Últimos 30 dias" => today.AddDays(-29), _ => null };
+        string term = OrderSearch.Trim();
+        filteredOrders = Orders.Where(o => (firstDate is null || (o.Date.LocalDateTime.Date >= firstDate.Value && o.Date.LocalDateTime.Date <= today))
+            && (OrderStatusFilter == "Todas as situações" || o.StatusLabel == OrderStatusFilter)
+            && Matches(term, o.NumberLabel, o.CustomerName, o.Phone, o.Address)).ToList();
+        orderPageNumber = resetPage ? 1 : Math.Clamp(orderPageNumber, 1, OrderPageCount);
+        UpdateOrderPage(selectedId);
+    }
+    private void UpdateOrderPage(Guid? selectedId)
+    {
+        OrderPageItems = filteredOrders.Skip((OrderPageNumber - 1) * OrderPageSize).Take(OrderPageSize).ToList();
+        Changed(nameof(OrderPageItems));
+        SelectedOrder = OrderPageItems.FirstOrDefault(o => o.Id == selectedId);
+        foreach (string property in new[] { nameof(OrderFilteredCount), nameof(OrderPageNumber), nameof(OrderPageCount), nameof(OrderRangeLabel), nameof(OrderPageLabel), nameof(OrderEmptyVisibility), nameof(OrderCanPrevious), nameof(OrderCanNext) }) Changed(property);
+        CommandManager.InvalidateRequerySuggested();
+    }
     private void FilterCash()
     {
         Guid? selectedId = SelectedCash?.Id;
@@ -234,7 +297,7 @@ public sealed class MainViewModel : Observable
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
-        FilterProducts(); FilterStock(); FilterClients(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
+        FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
         foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }

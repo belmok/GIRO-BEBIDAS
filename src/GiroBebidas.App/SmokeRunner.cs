@@ -99,6 +99,7 @@ public static partial class SmokeRunner
             CheckCartAmounts(window);
             CheckCashStatus(output);
             CheckCashDashboard(output);
+            CheckOrdersDashboard(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
             CheckComboBoxScrolling(window, output);

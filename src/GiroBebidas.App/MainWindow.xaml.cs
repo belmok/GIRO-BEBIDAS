@@ -337,17 +337,14 @@ public partial class MainWindow : Window
     }
     private void LoadOrder_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
-        var order = Require(Vm.SelectedOrder, "um pedido");
+        var order = OrderRow(sender);
         if (!order.IsOpen) throw new InvalidOperationException("Este pedido já está encerrado.");
         if (Vm.Cart.Count > 0 && !Confirm("Substituir a venda atual pelo pedido selecionado?")) return;
-        Vm.LoadOrder(order);
+        Vm.Refresh(); Vm.LoadOrder(order);
     });
     private void OrderStatus_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
-        var order = Require(Vm.SelectedOrder, "um pedido");
-        var d = new FormDialog(this, $"Situação • {order.NumberLabel}", "Para concluir, use Receber no PDV.");
-        d.Choice("status", "Situação", new[] { OrderStatus.Pendente, OrderStatus.Preparando, OrderStatus.EmEntrega, OrderStatus.Cancelado }, order.Status);
-        d.Submit = f => Vm.Service.SetOrderStatus(order.Id, f.Selected<OrderStatus>("status")); d.ShowDialog();
+        CreateOrderStatusDialog(OrderRow(sender)).ShowDialog();
     });
     private void OpenCash_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
@@ -495,7 +492,7 @@ public partial class MainWindow : Window
         d.Text("reason", "Motivo"); d.Submit = f => Vm.Service.CancelSale(sale.Id, f.Value("reason")); if (d.ShowDialog() == true) Notify("Venda cancelada; estoque e caixa atualizados.");
     });
     private void PrintSale_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintSale(this, Vm.Snapshot, Require(Vm.SelectedSale, "uma venda")));
-    private void PrintOrder_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintOrder(this, Vm.Snapshot, Require(Vm.SelectedOrder, "um pedido")));
+    private void PrintOrder_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintOrder(this, Vm.Service.Snapshot, OrderRow(sender)));
     private void PrintCash_Click(object sender, RoutedEventArgs e) => CashRowPrint_Click(sender, e);
     private static string Csv(string value)
     {

@@ -10,6 +10,8 @@ if ($Repositorio -notmatch '^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}
 $taskProjectVersion = ([xml][IO.File]::ReadAllText((Join-Path $taskRoot 'Directory.Build.props'))).Project.PropertyGroup.Version
 if ([string]::IsNullOrWhiteSpace($Versao)) { $Versao = $taskProjectVersion }
 if ($Versao -notmatch '^\d+\.\d+\.\d+$' -or $Versao -cne $taskProjectVersion) { throw 'A versão deve ser estável e corresponder a Directory.Build.props.' }
+. (Join-Path $PSScriptRoot 'Notas-Versao.ps1')
+$taskReleaseNotes = Get-GiroReleaseNotes -Versao $Versao -RepositorioRaiz $taskRoot
 $taskTag = 'v' + $Versao
 $taskDistributionRoot = [IO.Path]::GetFullPath((Join-Path $taskRoot 'artifacts\distribuicao'))
 $taskDistribution = [IO.Path]::GetFullPath((Join-Path $taskDistributionRoot $Versao))
@@ -41,6 +43,7 @@ foreach ($taskFile in $taskFiles) {
 $taskFileInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($taskFiles[0].FullName)
 if ($taskFileInfo.FileVersion -ne ($Versao + '.0')) { throw 'A versão do instalador não corresponde à versão da distribuição.' }
 Write-Output ('Distribuição conferida: Giro Bebidas ' + $Versao)
+Write-Output ('Novidades, correções e verificações conferidas: ' + $taskReleaseNotes.SourcePath)
 foreach ($taskFile in $taskFiles) { Write-Output ($taskFile.Name + ' — ' + [Math]::Round($taskFile.Length / 1MB, 2) + ' MB — SHA256 ' + $taskHashes[$taskFile.Name]) }
 if (-not $Publicar) {
     Write-Output ('Nenhum arquivo enviado. Para publicar depois de enviar a tag ' + $taskTag + ', execute este script com -Publicar.')
@@ -85,26 +88,23 @@ $taskRepoInfo = (Invoke-GiroGh -TaskArguments @('api', ('repos/' + $Repositorio)
 if ($taskRepoInfo.private -or $taskRepoInfo.full_name -ine $Repositorio) { throw 'O atualizador precisa de Releases em um repositório público configurado corretamente.' }
 
 # A failed upload remains a draft; the application never offers incomplete releases.
-$taskExistingJson = & gh release view $taskTag --repo $Repositorio --json isDraft,isPrerelease 2>$null
+$taskExistingJson = & gh release view $taskTag --repo $Repositorio --json 'isDraft,isPrerelease' 2>$null
 $taskExisting = if ($LASTEXITCODE -eq 0) { $taskExistingJson | ConvertFrom-Json } else { $null }
 if ($taskExisting -and -not $taskExisting.isDraft) { throw 'Esta versão já foi publicada. Use uma nova versão; não substitua arquivos de uma atualização disponível.' }
-if (-not $taskExisting) {
-    $taskNotesDirectory = Join-Path $taskRoot '.tools\github-publicacao'
-    [IO.Directory]::CreateDirectory($taskNotesDirectory) | Out-Null
-    $taskNotesPath = Join-Path $taskNotesDirectory ('notas-' + $Versao + '-' + [Guid]::NewGuid().ToString('N') + '.md')
-    try {
-        $taskNotes = @(
-            ('Giro Bebidas ' + $Versao + ' para Windows 64 bits.'),
-            '',
-            'Use InstalarGiroBebidas.exe para instalar ou atualizar. O instalador inclui o runtime necessário.',
-            'Antes de atualizar, finalize a venda e feche o caixa. O aplicativo cria um backup antes de abrir o instalador.',
-            'SHA256.txt permite conferir a integridade dos programas. O pacote portátil e o guia de uso também estão disponíveis.'
-        )
-        [IO.File]::WriteAllLines($taskNotesPath, [string[]]$taskNotes)
-        Invoke-GiroGh -TaskArguments @('release', 'create', $taskTag, '--repo', $Repositorio, '--verify-tag', '--draft', '--title', ('Giro Bebidas ' + $Versao), '--notes-file', $taskNotesPath) | Out-Null
+$taskNotesDirectory = Join-Path $taskRoot '.tools\github-publicacao'
+[IO.Directory]::CreateDirectory($taskNotesDirectory) | Out-Null
+$taskNotesPath = Join-Path $taskNotesDirectory ('notas-' + $Versao + '-' + [Guid]::NewGuid().ToString('N') + '.md')
+try {
+    [IO.File]::WriteAllText($taskNotesPath, $taskReleaseNotes.Content, [Text.UTF8Encoding]::new($false, $true))
+    if (-not $taskExisting) {
+        Invoke-GiroGh -TaskArguments @('release', 'create', $taskTag, '--repo', $Repositorio, '--verify-tag', '--draft', '--title', $taskReleaseNotes.Title, '--notes-file', $taskNotesPath) | Out-Null
     }
-    finally { if ([IO.File]::Exists($taskNotesPath)) { Remove-Item -LiteralPath $taskNotesPath } }
+    else {
+        # Refresh the body of a resumed draft; never retain generic or obsolete notes.
+        Invoke-GiroGh -TaskArguments @('release', 'edit', $taskTag, '--repo', $Repositorio, '--title', $taskReleaseNotes.Title, '--notes-file', $taskNotesPath) | Out-Null
+    }
 }
+finally { if ([IO.File]::Exists($taskNotesPath)) { Remove-Item -LiteralPath $taskNotesPath } }
 Invoke-GiroGh -TaskArguments (@('release', 'upload', $taskTag, '--repo', $Repositorio, '--clobber') + @($taskFiles.FullName)) | Out-Null
 # The tag REST endpoint only returns published releases. The CLI also resolves drafts;
 # databaseId is the numeric REST ID, while the CLI's id field is a GraphQL node ID.
@@ -112,6 +112,7 @@ $taskDraftRelease = (Invoke-GiroGh -TaskArguments @('release', 'view', $taskTag,
 if (-not $taskDraftRelease.isDraft -or $taskDraftRelease.tagName -cne $taskTag -or [string]$taskDraftRelease.databaseId -notmatch '^[1-9][0-9]*$') { throw 'Não foi possível identificar o rascunho correto para conferir os arquivos. Interrompida.' }
 $taskReleaseInfo = (Invoke-GiroGh -TaskArguments @('api', ('repos/' + $Repositorio + '/releases/' + $taskDraftRelease.databaseId))) | ConvertFrom-Json
 if (-not $taskReleaseInfo.draft -or $taskReleaseInfo.tag_name -cne $taskTag -or [string]$taskReleaseInfo.id -cne [string]$taskDraftRelease.databaseId) { throw 'A publicação deixou de ser o rascunho esperado antes da conferência. Interrompida.' }
+if ([string]::IsNullOrWhiteSpace($taskReleaseInfo.body) -or $taskReleaseInfo.body.Replace("`r`n", "`n").TrimEnd() -cne $taskReleaseNotes.Content.Replace("`r`n", "`n").TrimEnd()) { throw 'As notas do rascunho no GitHub não correspondem às novidades, correções e verificações desta versão. O rascunho foi preservado.' }
 foreach ($taskFile in $taskFiles) {
     $taskAssets = @($taskReleaseInfo.assets | Where-Object { $_.name -ceq $taskFile.Name })
     if ($taskAssets.Count -ne 1 -or $taskAssets[0].state -ne 'uploaded' -or $taskAssets[0].size -ne $taskFile.Length) { throw ('Upload incompleto: ' + $taskFile.Name + '. O rascunho foi preservado.') }
