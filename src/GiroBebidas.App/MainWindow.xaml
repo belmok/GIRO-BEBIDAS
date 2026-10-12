@@ -248,7 +248,7 @@
         </Button>
        </StackPanel>
       </Grid>
-      <ScrollViewer x:Name="ProductViewport" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,5,0,0"
+      <ScrollViewer x:Name="ProductViewport" Grid.Row="3" CanContentScroll="False" local:ControlledScrolling.IsEnabled="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,5,0,0"
                     SizeChanged="ProductViewport_SizeChanged" ScrollChanged="ProductViewport_ScrollChanged" AutomationProperties.Name="Produtos disponíveis">
        <Grid>
         <ItemsControl x:Name="ProductGridItems" ItemsSource="{Binding Tiles}" Visibility="{Binding GridViewVisibility}">

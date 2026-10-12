@@ -1,5 +1,11 @@
 # Controle de versões
 
+## 1.4.3 — 12/10/2026
+
+O catálogo de produtos da frente de caixa passa a usar a mesma rolagem reduzida e proporcional ao touchpad, nas visualizações em grade e lista. Gestos consecutivos são acumulados e os limites da área são respeitados. Fotos, pesquisa, filtros e inclusão de produtos na venda permanecem disponíveis.
+
+Conferência nativa aprovada nas duas visualizações para roda, pequenos deltas, eventos consecutivos, inversão e limites. Rolar sobre cartões visíveis preserva quantidades e total; o clique continua adicionando somente o produto escolhido, e a busca por nome funciona depois de rolar. Compilação sem avisos ou erros. Nenhum dado real foi alterado.
+
 ## 1.4.2 — 12/10/2026
 
 Rolagem reduzida e proporcional ao touchpad também no carrinho da venda, nos produtos em estoque e nas últimas movimentações. Os gestos pequenos avançam em pixels, com limites no início e no fim da lista. As grades continuam usando virtualização; seleção e ações dos produtos permanecem disponíveis.

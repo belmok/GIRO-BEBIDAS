@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.4.2
+# Guia do Giro Bebidas — versão 1.4.3
 
 ## Instalação e primeiro acesso
 
@@ -43,6 +43,8 @@ Em **Configurações do caixa**, o administrador pode definir o fundo de troco s
 No **Frente de caixa**, clique no produto ou busque pelo nome, SKU ou código de barras. **F2** posiciona o cursor na busca; **Enter** adiciona o produto encontrado. O leitor USB deve estar configurado para digitar como teclado e enviar Enter depois do código.
 
 Use as categorias com ícones para filtrar os produtos. Os botões **Exibir em grade** e **Exibir em lista**, ao lado da quantidade encontrada, alternam a apresentação sem alterar a pesquisa nem os produtos da venda. A grade adapta a largura dos cartões ao tamanho da janela. Quando a pesquisa não encontra produtos, a tela informa isso; apague a busca ou escolha outra categoria.
+
+A rolagem do catálogo usa movimentos menores e proporcionais ao touchpad, tanto na grade quanto na lista. Você pode rolar sobre os cartões sem adicionar produtos à venda; para incluir um item, clique nele ou no sinal **+**.
 
 O carrinho mostra a foto cadastrada ou a ilustração do produto, quantidade, preço aplicado e total de cada item. Os botões **+**, **−** e **Remover produto** ajustam a seleção. Desconto, entrega, subtotal e total ficam na parte inferior. Em janelas menores, use a rolagem para acessar os produtos e todas as ações.
 

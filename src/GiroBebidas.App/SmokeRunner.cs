@@ -234,7 +234,8 @@ public static class SmokeRunner
     private static void CheckTouchpadAreas(MainWindow window, string output)
     {
         var vm = window.Vm;
-        string page = vm.Page, message = vm.Message;
+        string page = vm.Page, message = vm.Message, search = vm.Search, category = vm.Category;
+        bool productsList = vm.IsProductsList;
         double width = window.Width, height = window.Height;
         decimal discount = vm.Discount, delivery = vm.DeliveryFee;
         Guid? customer = vm.CartCustomer?.Id, selectedStock = vm.SelectedStock?.Product.Id;
@@ -266,6 +267,50 @@ public static class SmokeRunner
             if (cartLine.Quantity != 1 || vm.Total != total) throw new InvalidOperationException("Diminuir quantidade precisa restaurar o total após a rolagem.");
             Capture(window, Path.Combine(output, "44-carrinho-rolagem-controlada.png"));
 
+            vm.Category = "Todos"; vm.Search = ""; FlushLayout(window);
+            var productSearch = (IValueProvider)new TextBoxAutomationPeer(window.ProductSearch).GetPattern(PatternInterface.Value);
+            var searchProduct = vm.Snapshot.Products.Single(p => p.Code == "005" && p.Active && !p.IsWeighed);
+            foreach (bool list in new[] { false, true })
+            {
+                decimal catalogTotal = vm.Total;
+                var catalogQuantities = vm.Cart.ToDictionary(line => line.Product.Id, line => line.Quantity);
+                var viewButton = list ? window.ProductListButton : window.ProductGridButton;
+                ((IInvokeProvider)new ButtonAutomationPeer(viewButton).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+                var items = list ? window.ProductListItems : window.ProductGridItems;
+                if (vm.IsProductsList != list || items.Visibility != Visibility.Visible)
+                    throw new InvalidOperationException("Os botões de grade e lista precisam continuar alternando o catálogo.");
+                var productButton = VisibleProductButton(items);
+                CheckArea(window.ProductViewport, productButton, () => VisibleProductButton(items));
+                AssertCatalogCart(catalogTotal, catalogQuantities);
+                window.ProductViewport.ScrollToVerticalOffset(Math.Min(110, window.ProductViewport.ScrollableHeight)); FlushLayout(window);
+                productButton = VisibleProductButton(items, true);
+                var tile = (ProductTile)productButton.DataContext;
+                if (!ReferenceEquals(productButton.Command, vm.AddProductCommand) || !ReferenceEquals(productButton.CommandParameter, tile) || !productButton.IsEnabled)
+                    throw new InvalidOperationException("O botão visível do catálogo precisa continuar ligado ao comando de adicionar seu produto.");
+                ((IInvokeProvider)new ButtonAutomationPeer(productButton).GetPattern(PatternInterface.Invoke)).Invoke(); FlushLayout(window);
+                if (vm.Cart.Single(line => line.Product.Id == tile.Product.Id).Quantity != catalogQuantities.GetValueOrDefault(tile.Product.Id) + 1 ||
+                    vm.Cart.Count != catalogQuantities.Count + (catalogQuantities.ContainsKey(tile.Product.Id) ? 0 : 1) ||
+                    vm.Cart.Any(line => line.Product.Id != tile.Product.Id && (!catalogQuantities.TryGetValue(line.Product.Id, out decimal qty) || line.Quantity != qty)))
+                    throw new InvalidOperationException("Depois de rolar, o botão do catálogo precisa adicionar somente o produto escolhido.");
+                foreach (var line in vm.Cart.ToArray())
+                {
+                    if (catalogQuantities.TryGetValue(line.Product.Id, out decimal quantity)) line.Quantity = quantity;
+                    else vm.Cart.Remove(line);
+                }
+                vm.Refresh(); FlushLayout(window); AssertCatalogCart(catalogTotal, catalogQuantities);
+                window.ProductViewport.ScrollToVerticalOffset(Math.Min(110, window.ProductViewport.ScrollableHeight)); FlushLayout(window);
+                Capture(window, Path.Combine(output, list ? "47-catalogo-lista-touchpad.png" : "46-catalogo-grade-touchpad.png"));
+                productSearch.SetValue(searchProduct.Name); FlushLayout(window);
+                if (vm.Search != searchProduct.Name || vm.Tiles.Count != 1 || vm.Tiles[0].Product.Id != searchProduct.Id ||
+                    items.Items.Count != 1 || items.Items[0] is not ProductTile match || match.Product.Id != searchProduct.Id ||
+                    window.ProductViewport.VerticalOffset < 0 || window.ProductViewport.VerticalOffset > window.ProductViewport.ScrollableHeight + 0.5)
+                    throw new InvalidOperationException("Buscar por nome depois de rolar precisa filtrar o produto correto e manter o catálogo dentro dos limites.");
+                AssertCatalogCart(catalogTotal, catalogQuantities);
+                productSearch.SetValue(""); FlushLayout(window);
+                if (items.Items.Count != vm.Tiles.Count || vm.Tiles.Count <= 1)
+                    throw new InvalidOperationException("Limpar a pesquisa precisa restaurar os produtos do catálogo após a rolagem.");
+            }
+
             vm.Page = "Estoque"; FlushLayout(window);
             window.StockProductsGrid.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, vm.StockRows.First());
             CheckArea(window.StockProductsGrid, window.StockProductsGrid);
@@ -290,11 +335,30 @@ public static class SmokeRunner
             vm.ClearCart(); foreach (var saved in originalCart) { saved.Line.Quantity = saved.Quantity; vm.Cart.Add(saved.Line); }
             vm.Discount = discount; vm.DeliveryFee = delivery; vm.Refresh(); vm.CartCustomer = vm.CustomerOptions.FirstOrDefault(c => c.Id == customer);
             vm.SelectedStock = vm.StockRows.FirstOrDefault(row => row.Product.Id == selectedStock);
+            vm.IsProductsList = productsList; vm.Search = search; vm.Category = category;
             vm.Page = page; vm.Message = message; window.Width = width; window.Height = height; FlushLayout(window);
         }
-        File.WriteAllText(Path.Combine(output, "areas-touchpad-smoke-ok.txt"), "Carrinho, produtos em estoque e últimas movimentações conferidos com passos120, deltas20, eventos consecutivos sem layout, inversão, limites e deslocamento externo. Quantidades, total, dados, seleção, rolagem horizontal, virtualização e menu de ações preservados.\n");
+        File.WriteAllText(Path.Combine(output, "areas-touchpad-smoke-ok.txt"), "Carrinho, catálogo do PDV em grade e lista, produtos em estoque e últimas movimentações conferidos com passos120, deltas20, eventos consecutivos sem layout, inversão, limites e deslocamento externo. Quantidades, total, dados, seleção, rolagem horizontal, virtualização e menu de ações preservados. Rodar o gesto sobre um botão visível do catálogo não altera a venda; adicionar o produto e buscar por nome continuam funcionando após rolar e alternar a visualização.\n");
 
-        void CheckArea(FrameworkElement area, FrameworkElement source)
+        void AssertCatalogCart(decimal expectedTotal, Dictionary<Guid, decimal> expectedQuantities)
+        {
+            if (vm.Total != expectedTotal || vm.Cart.Count != expectedQuantities.Count ||
+                vm.Cart.Any(line => !expectedQuantities.TryGetValue(line.Product.Id, out decimal quantity) || line.Quantity != quantity))
+                throw new InvalidOperationException("Rolar, filtrar e alternar grade/lista do catálogo não podem modificar quantidades ou total do carrinho.");
+        }
+        Button VisibleProductButton(ItemsControl items, bool addable = false)
+        {
+            var candidates = Descendants<Button>(items).Where(button => button.IsVisible && button.ActualHeight > 0 &&
+                button.DataContext is ProductTile tile && (!addable || (!tile.Product.IsWeighed && tile.Available > (vm.Cart.FirstOrDefault(line => line.Product.Id == tile.Product.Id)?.Quantity ?? 0))))
+                .Select(button => (Button: button, Position: button.TranslatePoint(new Point(), window.ProductViewport)))
+                .Where(item => item.Position.Y < window.ProductViewport.ViewportHeight && item.Position.Y + item.Button.ActualHeight > 0 &&
+                    item.Position.X < window.ProductViewport.ViewportWidth && item.Position.X + item.Button.ActualWidth > 0)
+                .OrderBy(item => item.Position.Y < 0 || item.Position.Y + item.Button.ActualHeight > window.ProductViewport.ViewportHeight)
+                .ToArray();
+            return candidates.FirstOrDefault().Button ?? throw new InvalidOperationException("A origem do gesto deve ser um botão de produto visível na área do catálogo.");
+        }
+
+        void CheckArea(FrameworkElement area, FrameworkElement source, Func<FrameworkElement>? visibleSource = null)
         {
             var viewer = ControlledScrolling.GetScrollViewer(area) ?? throw new InvalidOperationException("A área precisa ter seu próprio controle de rolagem.");
             if (!ControlledScrolling.GetIsEnabled(area) || viewer.ScrollableHeight <= 30)
@@ -307,7 +371,7 @@ public static class SmokeRunner
             void Wheel(int delta, bool flush = true)
             {
                 var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = Mouse.PreviewMouseWheelEvent };
-                source.RaiseEvent(args); if (flush) FlushLayout(window);
+                (visibleSource?.Invoke() ?? source).RaiseEvent(args); if (flush) FlushLayout(window);
                 if (!args.Handled) throw new InvalidOperationException($"A área {area.Name} precisa consumir o gesto de rolagem.");
             }
             void CheckOffset(double expected)
