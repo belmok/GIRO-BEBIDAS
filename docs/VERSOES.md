@@ -1,5 +1,11 @@
 # Controle de versões
 
+## 1.5.1 — 12/10/2026
+
+Aplicativo usa português brasileiro também quando o Windows está configurado em outro idioma. A data, os valores nos formulários e os relatórios usam a mesma cultura da interface. Conferência dos cartões aceita diferenças de espaço na formatação monetária entre versões do Windows, mantendo a verificação dos valores.
+
+Esta é a versão pública do novo Controle do caixa com cartões ilustrados e histórico. A publicação de 1.5.0 foi interrompida pela conferência do idioma no ambiente do GitHub; sua tag permanece no histórico de versões.
+
 ## 1.5.0 — 12/10/2026
 
 Controle do caixa redesenhado com cartões ilustrados por ondas e cores para dinheiro, Pix, débito e crédito. Os cartões exibem o caixa aberto e permanecem independentes do filtro do histórico. Histórico de caixas e suprimentos/sangrias recebem filtros por período, indicadores e mensagens quando não há registros.

@@ -11,10 +11,17 @@ namespace GiroBebidas.App;
 public partial class App : Application
 {
     private Mutex? instance;
+    public App() => UseBrazilianCulture();
+    private static void UseBrazilianCulture()
+    {
+        var culture = CultureInfo.GetCultureInfo("pt-BR");
+        CultureInfo.CurrentCulture = culture; CultureInfo.CurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture; CultureInfo.DefaultThreadCurrentUICulture = culture;
+    }
     protected override void OnStartup(StartupEventArgs e)
     {
+        UseBrazilianCulture();
         base.OnStartup(e);
-        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.GetCultureInfo("pt-BR"); CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("pt-BR");
         FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(XmlLanguage.GetLanguage("pt-BR")));
         string dataDir = Option(e.Args, "--data-dir") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GiroBebidas");
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(dataDir).ToUpperInvariant())))[..20];

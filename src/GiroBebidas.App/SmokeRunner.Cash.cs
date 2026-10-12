@@ -15,6 +15,9 @@ public static partial class SmokeRunner
 {
     private static void CheckCashDashboard(string output)
     {
+        static string CurrencyText(string text) => string.Concat(text.Where(c => !char.IsWhiteSpace(c)));
+        if (System.Globalization.CultureInfo.CurrentCulture.Name != "pt-BR" || System.Globalization.CultureInfo.CurrentUICulture.Name != "pt-BR")
+            throw new InvalidOperationException("O aplicativo precisa usar português brasileiro também em Windows com outro idioma.");
         var store = new JsonStore(Path.Combine(output, "dados-painel-caixa-" + Guid.NewGuid().ToString("N")));
         var service = new StoreService(store); service.Login("ADMIN", "ADMIN");
         foreach (int days in new[] { 40, 30, 29, 7, 6 })
@@ -33,7 +36,10 @@ public static partial class SmokeRunner
         {
             var vm = window.Vm; vm.Page = "Caixa";
             Capture(window, Path.Combine(output, "48-controle-caixa-fechado.png"));
-            if (new[] { window.CashMoneyValue, window.CashPixValue, window.CashDebitValue, window.CashCreditValue }.Any(value => value.Text != 0m.ToString("C2")))
+            // WPF can constrain the first Show to the runner's small desktop.
+            // Apply the requested QA size after the native window is created.
+            window.Width = 1480; window.Height = 940; FlushLayout(window);
+            if (new[] { window.CashMoneyValue, window.CashPixValue, window.CashDebitValue, window.CashCreditValue }.Any(value => CurrencyText(value.Text) != CurrencyText(0m.ToString("C2"))))
                 throw new InvalidOperationException("Sem caixa aberto, os cartões precisam mostrar zero.");
             if (!window.CashOpenButton.IsEnabled || window.CashMoveButton.IsEnabled || window.CashCloseButton.IsEnabled)
                 throw new InvalidOperationException("Caixa fechado deve permitir abertura e desativar movimentação/fechamento.");
@@ -56,7 +62,7 @@ public static partial class SmokeRunner
                 var values = new[] { window.CashMoneyValue, window.CashPixValue, window.CashDebitValue, window.CashCreditValue };
                 var expected = new[] { totals.Expected, totals.Pix, totals.Debit, totals.Credit };
                 for (int i = 0; i < values.Length; i++)
-                    if (values[i].Text != expected[i].ToString("C2")) throw new InvalidOperationException("O valor renderizado no cartão diverge do saldo do caixa.");
+                    if (CurrencyText(values[i].Text) != CurrencyText(expected[i].ToString("C2"))) throw new InvalidOperationException("O valor renderizado no cartão diverge do saldo do caixa.");
             }
             AssertTotals();
             if (window.CashOpenButton.IsEnabled || !window.CashMoveButton.IsEnabled || !window.CashCloseButton.IsEnabled)
