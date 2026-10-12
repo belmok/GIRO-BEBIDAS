@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.4.0
+# Guia do Giro Bebidas — versão 1.4.1
 
 ## Instalação e primeiro acesso
 
@@ -105,7 +105,7 @@ O administrador encontra **Atualizações** no menu. O sistema consulta por padr
 
 As opções usam interruptores: **verde** significa ativado e **cinza** significa desativado. Clique no interruptor ou no texto ao lado; pelo teclado, use **Tab** para selecionar e **Espaço** para alternar. As mudanças de configuração continuam exigindo o botão **Salvar** da tela.
 
-Use **Verificar atualizações** para procurar uma versão estável mais recente. A publicação precisa conter `InstalarGiroBebidas.exe` e `SHA256.txt`. A tela mostra a versão e suas novidades. O botão **Baixar e instalar atualização** exige caixa fechado, carrinho vazio e uma cópia instalada pelo instalador. O download é conferido com SHA-256, e o sistema cria um backup na pasta `Backups` antes de abrir o instalador. Confirme o fechamento do PDV, instale na pasta já selecionada e reabra o aplicativo. Dados e fotos ficam preservados na pasta de dados.
+Use **Verificar atualizações** para procurar uma versão estável mais recente. A publicação precisa conter `InstalarGiroBebidas.exe` e `SHA256.txt`. A tela mostra a versão e suas novidades. O botão **Baixar e instalar atualização** exige caixa fechado, carrinho vazio e uma cópia instalada pelo instalador. O download é conferido com SHA-256, e o sistema cria um backup na pasta `Backups` antes de abrir o instalador. A confirmação mostra a versão, o nome e o caminho selecionável do backup: escolha **Atualizar agora** para fechar o PDV e abrir o instalador, ou **Agora não** para continuar no sistema. Esc e o botão de fechar também cancelam a confirmação. Instale na pasta já selecionada e reabra o aplicativo. Dados e fotos ficam preservados na pasta de dados.
 
 Se o download falhar ou for cancelado, tente novamente. Se ainda não houver uma publicação pública mais recente, o sistema informa essa situação. Cópias portáteis devem ser atualizadas manualmente pelo instalador. O fluxo não usa senhas ou tokens do GitHub e atende repositórios públicos.
 

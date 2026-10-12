@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:GiroBebidas.App">
   <!-- Controles arredondados com foco, seleção e rolagem do Giro Bebidas. -->
   <SolidColorBrush x:Key="PreviewInputInk" Color="#172B29" />
   <SolidColorBrush x:Key="PreviewInputGreen" Color="#187B52" />
@@ -161,7 +162,6 @@
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-    <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ComboBox">
@@ -209,7 +209,8 @@
                 <Border.Effect>
                   <DropShadowEffect Color="#112D25" BlurRadius="12" ShadowDepth="3" Opacity="0.12" />
                 </Border.Effect>
-                <ScrollViewer Focusable="False" CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                <ScrollViewer x:Name="PART_PopupScrollViewer" Focusable="False" CanContentScroll="False"
+                              local:ComboBoxScrolling.IsEnabled="True"
                               HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                               VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                   <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"

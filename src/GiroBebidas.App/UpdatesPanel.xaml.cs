@@ -139,7 +139,7 @@ public partial class UpdatesPanel : UserControl
             string backup = Path.Combine(backups, $"antes-atualizacao-{DateTime.Now:yyyyMMdd-HHmmssfff}.json");
             Vm.Service.ExportBackup(backup);
             StatusLabel.Text = "Instalador conferido e backup criado. Pronto para instalar.";
-            if (MessageBox.Show(Main, $"Atualização {selected.Version.ToString(3)} pronta.\n\nBackup criado em:\n{backup}\n\nFechar o PDV e abrir o instalador agora?", "Atualizar Giro Bebidas", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            if (new UpdateConfirmationWindow(Main, selected.Version, backup).ShowDialog() != true) return;
             EnsureReadyToInstall();
             var start = new ProcessStartInfo(installer) { UseShellExecute = true };
             start.ArgumentList.Add("--update-install-dir"); start.ArgumentList.Add(AppContext.BaseDirectory);

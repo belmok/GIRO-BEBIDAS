@@ -1,0 +1,67 @@
+<Window x:Class="GiroBebidas.App.UpdateConfirmationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Giro Bebidas • Atualização pronta" Width="620" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Language="pt-BR"
+        Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
+ <Window.Resources>
+  <Style x:Key="ConfirmationCloseStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+   <Setter Property="Width" Value="32"/><Setter Property="Height" Value="32"/><Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="0"/>
+   <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#657C6E"/><Setter Property="BorderBrush" Value="Transparent"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Border x:Name="CloseSurface" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CloseSurface" Property="Background" Value="#E5F1E9"/><Setter Property="Foreground" Value="#187B52"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="CloseSurface" Property="BorderBrush" Value="#187B52"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="CloseSurface" Property="Background" Value="#D3E8DA"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+ </Window.Resources>
+ <Grid>
+ <Border Margin="12" Background="White" BorderBrush="#DCE8DF" BorderThickness="1" CornerRadius="17">
+  <Border.Effect><DropShadowEffect Color="#112D25" BlurRadius="22" ShadowDepth="4" Opacity="0.18"/></Border.Effect>
+  <Grid>
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Border Background="#F6FAF7" BorderBrush="#E3ECE6" BorderThickness="0,0,0,1" CornerRadius="16,16,0,0" Padding="25,22" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
+     <Border Width="48" Height="48" Background="#E1F2E6" CornerRadius="13" VerticalAlignment="Center">
+      <Path Data="M 18,6 A 8,8 0 1 0 19,14 M 18,1 L 18,6 L 13,6" Width="25" Height="25" Stretch="Uniform" Stroke="#187B52" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <StackPanel Grid.Column="2" VerticalAlignment="Center"><TextBlock Text="Atualização pronta" FontSize="23" FontWeight="SemiBold" Foreground="#172B29" TextWrapping="NoWrap"/><TextBlock Text="GIRO BEBIDAS" FontSize="10" FontWeight="SemiBold" Foreground="#597465" Margin="0,5,0,0"/></StackPanel>
+     <Button x:Name="CloseButton" x:FieldModifier="internal" Grid.Column="3" Style="{StaticResource ConfirmationCloseStyle}" Click="Cancel_Click" VerticalAlignment="Top" ToolTip="Atualizar depois" AutomationProperties.Name="Fechar confirmação de atualização">
+      <Path Data="M 1,1 L 10,10 M 10,1 L 1,10" Width="11" Height="11" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+     </Button>
+    </Grid>
+   </Border>
+   <StackPanel Grid.Row="1" Margin="27,23,27,0">
+    <TextBlock Text="Uma nova versão está pronta para instalar." FontSize="13" Foreground="#51695B" Margin="0,0,0,16"/>
+    <Border Background="#EAF6EE" BorderBrush="#D3EADB" BorderThickness="1" CornerRadius="11" Padding="16,12">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <StackPanel><TextBlock Text="NOVA VERSÃO" FontSize="10" FontWeight="SemiBold" Foreground="#567763" Margin="0,0,0,4"/><TextBlock x:Name="VersionLabel" x:FieldModifier="internal" FontSize="28" FontWeight="SemiBold" Foreground="#187B52" TextWrapping="NoWrap" AutomationProperties.Name="Versão disponível para atualizar"/></StackPanel>
+      <Border Grid.Column="1" Width="29" Height="29" Background="#D3EDDD" CornerRadius="15" VerticalAlignment="Center"><Path Data="M 1,6 L 5,10 L 12,1" Width="13" Height="11" Stretch="Uniform" Stroke="#187B52" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+     </Grid>
+    </Border>
+    <Border Background="#F5F9F6" BorderBrush="#DFEAE2" BorderThickness="1" CornerRadius="11" Padding="15" Margin="0,17,0,0">
+     <StackPanel>
+      <StackPanel Orientation="Horizontal"><Path Data="M 1,4 L 8,4 L 10,6 L 19,6 L 19,18 L 1,18 Z M 1,4 L 1,2 L 8,2 L 10,4" Width="18" Height="18" Stretch="Uniform" Stroke="#187B52" StrokeThickness="1.5" StrokeLineJoin="Round" Margin="0,0,9,0" VerticalAlignment="Center"/><TextBlock Text="Seu backup está salvo" FontSize="14" FontWeight="SemiBold" Foreground="#284C37" VerticalAlignment="Center"/></StackPanel>
+      <TextBlock x:Name="BackupFileLabel" x:FieldModifier="internal" FontSize="12" FontWeight="SemiBold" Foreground="#365447" Margin="0,9,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" AutomationProperties.Name="Arquivo de backup criado"/>
+      <TextBlock Text="Caminho do backup" FontSize="11" Foreground="#597164" Margin="0,13,0,6"/>
+      <TextBox x:Name="BackupPathBox" x:FieldModifier="internal" IsReadOnly="True" TextWrapping="Wrap" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+               MinHeight="62" MaxHeight="118" Padding="10,8" VerticalContentAlignment="Top" FontSize="12" Foreground="#365447" Background="White"
+               ToolTip="Selecione o caminho e use Ctrl+C para copiá-lo." AutomationProperties.Name="Caminho completo do backup"/>
+     </StackPanel>
+    </Border>
+    <TextBlock Text="Ao continuar, o Giro Bebidas será fechado para abrir o instalador." FontSize="12" Foreground="#51695B" Margin="0,17,0,0" TextWrapping="Wrap"/>
+   </StackPanel>
+   <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="27,21,27,25">
+    <Button x:Name="LaterButton" x:FieldModifier="internal" Content="Agora não" Click="Cancel_Click" IsCancel="True" MinWidth="116" MinHeight="44" FontSize="13" Foreground="#365447" Margin="0,0,10,0" ToolTip="Manter o sistema aberto e atualizar depois." AutomationProperties.Name="Atualizar depois"/>
+    <Button x:Name="ConfirmButton" x:FieldModifier="internal" Style="{StaticResource PrimaryButton}" Click="Confirm_Click" IsDefault="True" MinWidth="168" MinHeight="44" FontSize="13" ToolTip="Fechar o sistema e abrir o instalador da nova versão." AutomationProperties.Name="Atualizar agora">
+     <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="15" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Atualizar agora" VerticalAlignment="Center"/></StackPanel>
+    </Button>
+   </StackPanel>
+  </Grid>
+ </Border>
+ </Grid>
+</Window>

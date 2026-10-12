@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.4.1 — 12/10/2026
+
+Confirmação de atualização redesenhada no padrão do Giro Bebidas: título e versão em destaque, cartão de cópia de segurança, caminho completo selecionável e ações Atualizar agora e Agora não. Cancelar, Esc ou fechar a janela mantém o PDV aberto. A verificação do instalador, o backup e a validação de caixa fechado e carrinho vazio permanecem no fluxo de atualização.
+
+Rolagem das listas abertas de opções, como categorias e ordenação, com sensibilidade reduzida e resposta proporcional aos gestos do touchpad. Seleção por clique e teclado preservada.
+
+Conferência nativa aprovada: confirmação modal, cancelamento, Esc e fechamento; caminho longo selecionável; backup e dados preservados. Lista real de ordenação verificada com roda, pequenos deltas nos dois sentidos, limites e seleção por teclado e automação. Compilação sem avisos ou erros. Nenhum instalador foi aberto pelas escolhas simuladas.
+
 ## 1.4.0 — 12/10/2026
 
 Produtos e estoque redesenhado com miniaturas, categorias e situações coloridas, filtros por categoria, busca por nome/código/barras/categoria e ordenação pelo seletor, botão de direção ou cabeçalho. Os totais físico, reservado e livre permanecem separados. O cartão inferior exibe as cinco movimentações mais recentes, com entradas e saídas diferenciadas, e abre o histórico completo.

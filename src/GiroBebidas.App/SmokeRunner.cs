@@ -22,83 +22,213 @@ public static class SmokeRunner
         if (!service.Snapshot.CashSessions.Any()) service.OpenCash(250);
         if (service.Snapshot.Users.Count == 1) service.SaveUser(new() { Name = "João • balcão", Username = "JOAO", Role = UserRole.Operador }, "1234");
         var window = new MainWindow(service, false); var vm = window.Vm;
-        vm.AddProduct(vm.Snapshot.Products[0], 12); vm.AddProduct(vm.Snapshot.Products[4], 2); vm.AddProduct(vm.Snapshot.Products[12], 1);
-        vm.CartCustomer = vm.CustomerOptions.Last(); vm.Discount = 2;
-        if (!service.Snapshot.Orders.Any()) service.CreateOrder([new(vm.Snapshot.Products[2].Id, 6)], service.Snapshot.Customers[0].Id, true, "Rua dos Ipês, 85 • Centro", "Entregar após 18h", 0, 5);
-        if (!service.Snapshot.Sales.Any()) service.CompleteSale(new([new(vm.Snapshot.Products[0].Id, 2)], 0, 0, null, PaymentMethod.Pix, 9));
-        vm.Refresh(); Capture(window, Path.Combine(output, "02-pdv.png"));
-        int index = 3;
-        foreach (var page in new[] { "Estoque", "Clientes", "Pedidos", "Caixa", "Vendas", "Relatórios", "Usuários", "Equipamentos", "Configurações" })
+        try
         {
-            vm.Page = page; Capture(window, Path.Combine(output, $"{index++:00}-{page.ToLowerInvariant()}.png"));
+            vm.AddProduct(vm.Snapshot.Products[0], 12); vm.AddProduct(vm.Snapshot.Products[4], 2); vm.AddProduct(vm.Snapshot.Products[12], 1);
+            vm.CartCustomer = vm.CustomerOptions.Last(); vm.Discount = 2;
+            if (!service.Snapshot.Orders.Any()) service.CreateOrder([new(vm.Snapshot.Products[2].Id, 6)], service.Snapshot.Customers[0].Id, true, "Rua dos Ipês, 85 • Centro", "Entregar após 18h", 0, 5);
+            if (!service.Snapshot.Sales.Any()) service.CompleteSale(new([new(vm.Snapshot.Products[0].Id, 2)], 0, 0, null, PaymentMethod.Pix, 9));
+            vm.Refresh(); Capture(window, Path.Combine(output, "02-pdv.png"));
+            int index = 3;
+            foreach (var page in new[] { "Estoque", "Clientes", "Pedidos", "Caixa", "Vendas", "Relatórios", "Usuários", "Equipamentos", "Configurações" })
+            {
+                vm.Page = page; Capture(window, Path.Combine(output, $"{index++:00}-{page.ToLowerInvariant()}.png"));
+            }
+            string samplePhoto = Path.Combine(output, "foto-de-teste.png");
+            var photoVisual = new DrawingVisual(); using (var context = photoVisual.RenderOpen()) context.DrawImage(BeverageArt.Create(vm.Snapshot.Products[0]), new Rect(0, 0, 160, 140));
+            var photoBitmap = new RenderTargetBitmap(160, 140, 96, 96, PixelFormats.Pbgra32); photoBitmap.Render(photoVisual);
+            var photoEncoder = new PngBitmapEncoder(); photoEncoder.Frames.Add(BitmapFrame.Create(photoBitmap)); using (var stream = File.Create(samplePhoto)) photoEncoder.Save(stream);
+            var photoProduct = vm.Snapshot.Products[0]; photoProduct.PhotoBase64 = PhotoTools.Import(samplePhoto); photoProduct.Description = "Cerveja pilsen em lata de 350 ml. Ideal para servir gelada.";
+            service.SaveProduct(photoProduct); vm.Refresh();
+            if (PhotoTools.Decode(service.Snapshot.Products[0].PhotoBase64) is null) throw new InvalidOperationException("Falha na importação da foto.");
+            var photoLine = vm.Cart.Single(l => l.Product.Id == photoProduct.Id);
+            decimal photoCartTotal = vm.Total;
+            vm.Cart[vm.Cart.IndexOf(photoLine)] = new CartLine(vm.Snapshot.Products.Single(p => p.Id == photoProduct.Id), photoLine.Quantity);
+            if (vm.Cart.Single(l => l.Product.Id == photoProduct.Id).Image is not BitmapSource || vm.Total != photoCartTotal)
+                throw new InvalidOperationException("A foto persistida precisa aparecer no item do carrinho sem alterar seu total.");
+            vm.Refresh();
+            service.ExportBackup(Path.Combine(output, "backup-com-foto.json"));
+            var form = window.CreateProductDialog(photoProduct, false);
+            // An unshown owner cannot be assigned to a visible window; clear it for offscreen QA.
+            form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = Math.Min(800, form.MaxHeight); Capture(form, Path.Combine(output, "12-cadastro-produto.png"));
+            form.ScrollToField("origin"); Capture(form, Path.Combine(output, "19-dados-fiscais-produto.png")); form.Close();
+            vm.Page = "Fiscal"; Capture(window, Path.Combine(output, "16-configuracao-fiscal.png"));
+            window.FiscalConfigurationPanel.ShowChecks(); Capture(window, Path.Combine(output, "20-conferencia-fiscal.png"));
+            var issuerForm = window.FiscalConfigurationPanel.CreateIssuerDialog(); issuerForm.Owner = null; issuerForm.SizeToContent = SizeToContent.Manual; issuerForm.Height = Math.Min(800, issuerForm.MaxHeight);
+            Capture(issuerForm, Path.Combine(output, "17-empresa-emitente.png")); issuerForm.Close();
+            var fiscalForm = window.FiscalConfigurationPanel.CreateOptionsDialog(); fiscalForm.Owner = null; fiscalForm.SizeToContent = SizeToContent.Manual; fiscalForm.Height = Math.Min(730, fiscalForm.MaxHeight);
+            Capture(fiscalForm, Path.Combine(output, "18-parametros-nfce.png")); fiscalForm.Close();
+            if (service.Snapshot.Fiscal.Options.Environment != FiscalEnvironment.Homologacao || vm.FiscalChecks.Single(c => c.Item == "Autorização SEFAZ").Complete)
+                throw new InvalidOperationException("A configuração inicial não pode simular emissão fiscal autorizada.");
+            vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "21-atualizacoes.png"));
+            var updates = window.UpdatesConfigurationPanel;
+            string configuredRepository = updates.RepositoryBox.Text;
+            updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
+            if (updates.RepositoryBox.Visibility != Visibility.Hidden || updates.RepositoryMask.Visibility != Visibility.Visible || (!string.IsNullOrEmpty(configuredRepository) && updates.RepositoryMask.Text.Contains(configuredRepository, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("O endereço do repositório precisa ficar oculto na tela.");
+            Capture(window, Path.Combine(output, "22-atualizacoes-repositorio-oculto.png"));
+            updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
+            if (updates.RepositoryBox.Visibility != Visibility.Visible || updates.RepositoryBox.Text != configuredRepository)
+                throw new InvalidOperationException("Mostrar o repositório deve preservar o endereço configurado.");
+            bool automaticCheck = updates.AutoCheckBox.IsChecked == true;
+            var togglePeer = new CheckBoxAutomationPeer(updates.AutoCheckBox);
+            var toggleProvider = (IToggleProvider)togglePeer.GetPattern(PatternInterface.Toggle);
+            toggleProvider.Toggle();
+            if (updates.AutoCheckBox.IsChecked == automaticCheck) throw new InvalidOperationException("O interruptor de atualizações não alternou a opção.");
+            toggleProvider.Toggle();
+            if (updates.AutoCheckBox.IsChecked != automaticCheck) throw new InvalidOperationException("O interruptor não preservou a configuração ao retornar ao estado inicial.");
+            window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
+            if (window.CartItemsViewport.ActualHeight < 230) throw new InvalidOperationException("O carrinho precisa manter espaço suficiente para os produtos na tela menor.");
+            MainWindow.ScrollMenu(window.MenuScroll, -20, 3); window.UpdateLayout();
+            if (window.MenuScroll.ScrollableHeight > 0 && window.MenuScroll.VerticalOffset <= 0) throw new InvalidOperationException("A rolagem fracionária do menu não respondeu ao gesto do touchpad.");
+            MainWindow.ScrollMenu(window.MenuScroll, 120, 3); window.UpdateLayout();
+            vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "23-atualizacoes-tela-menor.png"));
+            updates.UpdatesScroll.ScrollToEnd(); window.UpdateLayout();
+            var installPosition = updates.InstallButton.TranslatePoint(new Point(0, 0), updates.UpdatesScroll);
+            if (installPosition.X < 0 || installPosition.X + updates.InstallButton.ActualWidth > updates.UpdatesScroll.ActualWidth || installPosition.Y < 0 || installPosition.Y + updates.InstallButton.ActualHeight > updates.UpdatesScroll.ActualHeight)
+                throw new InvalidOperationException("O botão de atualização precisa ficar acessível na janela menor.");
+            updates.AutoCheckBox.IsChecked = false;
+            Capture(window, Path.Combine(output, "24-atualizacoes-interruptor-desativado.png"));
+            updates.AutoCheckBox.IsChecked = automaticCheck;
+            var switchSamples = new StackPanel { Margin = new Thickness(20) };
+            switchSamples.Children.Add(new CheckBox { Content = "Opção ativada", IsChecked = true });
+            switchSamples.Children.Add(new CheckBox { Content = "Opção desativada", IsChecked = false });
+            var switchWindow = new Window { Width = 370, Height = 210, Content = switchSamples, Background = Brushes.White };
+            Capture(switchWindow, Path.Combine(output, "25-interruptores.png")); switchWindow.Close();
+            CheckProductUi(window, output);
+            CheckCartAmounts(window);
+            CheckCashStatus(output);
+            CheckStockUi(window, output);
+            CheckUpdateConfirmation(window, output);
+            CheckComboBoxScrolling(window, output);
+            vm.ClearCart(); window.Close();
+            File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados. Menu do caixa acionado por automação, atualizado sem reabrir e fechado por Esc ou clique fora; histórico acessível e configurações restritas ao administrador. Formulário de configurações do caixa renderizado; fundo sugerido salvo sem alterar o saldo e adotado na próxima abertura pelo operador.\n");
         }
-        string samplePhoto = Path.Combine(output, "foto-de-teste.png");
-        var photoVisual = new DrawingVisual(); using (var context = photoVisual.RenderOpen()) context.DrawImage(BeverageArt.Create(vm.Snapshot.Products[0]), new Rect(0, 0, 160, 140));
-        var photoBitmap = new RenderTargetBitmap(160, 140, 96, 96, PixelFormats.Pbgra32); photoBitmap.Render(photoVisual);
-        var photoEncoder = new PngBitmapEncoder(); photoEncoder.Frames.Add(BitmapFrame.Create(photoBitmap)); using (var stream = File.Create(samplePhoto)) photoEncoder.Save(stream);
-        var photoProduct = vm.Snapshot.Products[0]; photoProduct.PhotoBase64 = PhotoTools.Import(samplePhoto); photoProduct.Description = "Cerveja pilsen em lata de 350 ml. Ideal para servir gelada.";
-        service.SaveProduct(photoProduct); vm.Refresh();
-        if (PhotoTools.Decode(service.Snapshot.Products[0].PhotoBase64) is null) throw new InvalidOperationException("Falha na importação da foto.");
-        var photoLine = vm.Cart.Single(l => l.Product.Id == photoProduct.Id);
-        decimal photoCartTotal = vm.Total;
-        vm.Cart[vm.Cart.IndexOf(photoLine)] = new CartLine(vm.Snapshot.Products.Single(p => p.Id == photoProduct.Id), photoLine.Quantity);
-        if (vm.Cart.Single(l => l.Product.Id == photoProduct.Id).Image is not BitmapSource || vm.Total != photoCartTotal)
-            throw new InvalidOperationException("A foto persistida precisa aparecer no item do carrinho sem alterar seu total.");
-        vm.Refresh();
-        service.ExportBackup(Path.Combine(output, "backup-com-foto.json"));
-        var form = window.CreateProductDialog(photoProduct, false);
-        // An unshown owner cannot be assigned to a visible window; clear it for offscreen QA.
-        form.Owner = null; form.SizeToContent = SizeToContent.Manual; form.Height = Math.Min(800, form.MaxHeight); Capture(form, Path.Combine(output, "12-cadastro-produto.png"));
-        form.ScrollToField("origin"); Capture(form, Path.Combine(output, "19-dados-fiscais-produto.png")); form.Close();
-        vm.Page = "Fiscal"; Capture(window, Path.Combine(output, "16-configuracao-fiscal.png"));
-        window.FiscalConfigurationPanel.ShowChecks(); Capture(window, Path.Combine(output, "20-conferencia-fiscal.png"));
-        var issuerForm = window.FiscalConfigurationPanel.CreateIssuerDialog(); issuerForm.Owner = null; issuerForm.SizeToContent = SizeToContent.Manual; issuerForm.Height = Math.Min(800, issuerForm.MaxHeight);
-        Capture(issuerForm, Path.Combine(output, "17-empresa-emitente.png")); issuerForm.Close();
-        var fiscalForm = window.FiscalConfigurationPanel.CreateOptionsDialog(); fiscalForm.Owner = null; fiscalForm.SizeToContent = SizeToContent.Manual; fiscalForm.Height = Math.Min(730, fiscalForm.MaxHeight);
-        Capture(fiscalForm, Path.Combine(output, "18-parametros-nfce.png")); fiscalForm.Close();
-        if (service.Snapshot.Fiscal.Options.Environment != FiscalEnvironment.Homologacao || vm.FiscalChecks.Single(c => c.Item == "Autorização SEFAZ").Complete)
-            throw new InvalidOperationException("A configuração inicial não pode simular emissão fiscal autorizada.");
-        vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "21-atualizacoes.png"));
-        var updates = window.UpdatesConfigurationPanel;
-        string configuredRepository = updates.RepositoryBox.Text;
-        updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
-        if (updates.RepositoryBox.Visibility != Visibility.Hidden || updates.RepositoryMask.Visibility != Visibility.Visible || (!string.IsNullOrEmpty(configuredRepository) && updates.RepositoryMask.Text.Contains(configuredRepository, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("O endereço do repositório precisa ficar oculto na tela.");
-        Capture(window, Path.Combine(output, "22-atualizacoes-repositorio-oculto.png"));
-        updates.RepositoryVisibilityButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); window.UpdateLayout();
-        if (updates.RepositoryBox.Visibility != Visibility.Visible || updates.RepositoryBox.Text != configuredRepository)
-            throw new InvalidOperationException("Mostrar o repositório deve preservar o endereço configurado.");
-        bool automaticCheck = updates.AutoCheckBox.IsChecked == true;
-        var togglePeer = new CheckBoxAutomationPeer(updates.AutoCheckBox);
-        var toggleProvider = (IToggleProvider)togglePeer.GetPattern(PatternInterface.Toggle);
-        toggleProvider.Toggle();
-        if (updates.AutoCheckBox.IsChecked == automaticCheck) throw new InvalidOperationException("O interruptor de atualizações não alternou a opção.");
-        toggleProvider.Toggle();
-        if (updates.AutoCheckBox.IsChecked != automaticCheck) throw new InvalidOperationException("O interruptor não preservou a configuração ao retornar ao estado inicial.");
-        window.Width = 1200; window.Height = 760; vm.Page = "PDV"; Capture(window, Path.Combine(output, "15-pdv-tela-menor.png"));
-        if (window.CartItemsViewport.ActualHeight < 230) throw new InvalidOperationException("O carrinho precisa manter espaço suficiente para os produtos na tela menor.");
-        MainWindow.ScrollMenu(window.MenuScroll, -20, 3); window.UpdateLayout();
-        if (window.MenuScroll.ScrollableHeight > 0 && window.MenuScroll.VerticalOffset <= 0) throw new InvalidOperationException("A rolagem fracionária do menu não respondeu ao gesto do touchpad.");
-        MainWindow.ScrollMenu(window.MenuScroll, 120, 3); window.UpdateLayout();
-        vm.Page = "Atualizações"; Capture(window, Path.Combine(output, "23-atualizacoes-tela-menor.png"));
-        updates.UpdatesScroll.ScrollToEnd(); window.UpdateLayout();
-        var installPosition = updates.InstallButton.TranslatePoint(new Point(0, 0), updates.UpdatesScroll);
-        if (installPosition.X < 0 || installPosition.X + updates.InstallButton.ActualWidth > updates.UpdatesScroll.ActualWidth || installPosition.Y < 0 || installPosition.Y + updates.InstallButton.ActualHeight > updates.UpdatesScroll.ActualHeight)
-            throw new InvalidOperationException("O botão de atualização precisa ficar acessível na janela menor.");
-        updates.AutoCheckBox.IsChecked = false;
-        Capture(window, Path.Combine(output, "24-atualizacoes-interruptor-desativado.png"));
-        updates.AutoCheckBox.IsChecked = automaticCheck;
-        var switchSamples = new StackPanel { Margin = new Thickness(20) };
-        switchSamples.Children.Add(new CheckBox { Content = "Opção ativada", IsChecked = true });
-        switchSamples.Children.Add(new CheckBox { Content = "Opção desativada", IsChecked = false });
-        var switchWindow = new Window { Width = 370, Height = 210, Content = switchSamples, Background = Brushes.White };
-        Capture(switchWindow, Path.Combine(output, "25-interruptores.png")); switchWindow.Close();
-        CheckProductUi(window, output);
-        CheckCartAmounts(window);
-        CheckCashStatus(output);
-        CheckStockUi(window, output);
-        vm.ClearCart(); window.Close();
-        File.WriteAllText(Path.Combine(output, "smoke-ok.txt"), "Login, PDV e dez módulos renderizados. Cadastro completo de produto e campos fiscais renderizados. Configuração fiscal, empresa e parâmetros NFC-e renderizados. Foto importada, persistida, exibida no carrinho e exportada no backup. Layout menor renderizado. Painel de atualizações e interruptores renderizados. Repositório ocultado e reexibido sem alteração; interruptor alternado por automação; botão de atualização acessível na janela menor. Pesquisa nativa por nome, código e código de barras validada em grade e lista; texto e cursor sem recorte; Enter adiciona o produto correto e limpa a pesquisa; F2 seleciona e focaliza a busca. Categoria, estado sem resultados e layout dos produtos em 1200 x 760 conferidos. Alternar grade/lista preserva o total; pedidos reservados bloqueiam alterações no carrinho. Desconto e entrega confirmados antes da perda de foco; texto inválido bloqueado e corrigido. Caixa fechado vermelho e aberto verde validados em dados isolados. Menu do caixa acionado por automação, atualizado sem reabrir e fechado por Esc ou clique fora; histórico acessível e configurações restritas ao administrador. Formulário de configurações do caixa renderizado; fundo sugerido salvo sem alterar o saldo e adotado na próxima abertura pelo operador.\n");
+        finally { vm.ClearCart(); if (window.IsVisible) window.Close(); }
+    }
+    private static void CheckUpdateConfirmation(MainWindow owner, string output)
+    {
+        var version = typeof(StoreService).Assembly.GetName().Version!;
+        string backup = Path.GetFullPath(Path.Combine(output, $"antes-atualizacao-{DateTime.Now:yyyyMMdd-HHmmssfff}.json"));
+        owner.Vm.Service.ExportBackup(backup);
+        string dataBefore = System.Text.Json.JsonSerializer.Serialize(owner.Vm.Service.Snapshot, JsonStore.JsonOptions);
+        string longPath = Path.Combine(@"C:\Depósito Giro Bebidas", string.Join("\\", Enumerable.Repeat("Cópias de segurança do atendimento e das movimentações do depósito", 5)), Path.GetFileName(backup));
+
+        void CheckChoice(string path, bool expected, Action<UpdateConfirmationWindow> choose, string? imageName = null)
+        {
+            var dialog = new UpdateConfirmationWindow(owner, version, path)
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual, Left = -10000, Top = -10000, ShowActivated = false
+            };
+            Exception? failure = null;
+            var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+            timeout.Tick += (_, _) => { failure = new InvalidOperationException("A escolha na confirmação de atualização não fechou a janela modal."); dialog.Close(); };
+            dialog.Loaded += (_, _) => dialog.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+            {
+                try
+                {
+                    FlushLayout(dialog);
+                    if (!dialog.VersionLabel.Text.Contains(version.ToString(3), StringComparison.Ordinal) ||
+                        dialog.BackupFileLabel.Text != Path.GetFileName(path) || dialog.BackupPathBox.Text != path || !dialog.BackupPathBox.IsReadOnly)
+                        throw new InvalidOperationException("A confirmação precisa mostrar a versão e o nome/caminho completo selecionável do backup.");
+                    var root = (FrameworkElement)dialog.Content;
+                    foreach (var element in new FrameworkElement[] { dialog.VersionLabel, dialog.BackupFileLabel, dialog.BackupPathBox, dialog.ConfirmButton, dialog.LaterButton, dialog.CloseButton })
+                    {
+                        var point = element.TranslatePoint(new Point(), root);
+                        if (!element.IsVisible || element.ActualWidth <= 0 || element.ActualHeight <= 0 || point.X < -0.5 || point.Y < -0.5 ||
+                            point.X + element.ActualWidth > root.ActualWidth + 0.5 || point.Y + element.ActualHeight > root.ActualHeight + 0.5)
+                            throw new InvalidOperationException($"A confirmação de atualização não pode recortar o controle {element.Name}.");
+                    }
+                    dialog.BackupPathBox.SelectAll();
+                    if (dialog.BackupPathBox.SelectedText != path) throw new InvalidOperationException("O caminho completo do backup precisa permitir seleção para cópia.");
+                    dialog.BackupPathBox.Select(0, 0);
+                    if (imageName is not null) Capture(dialog, Path.Combine(output, imageName));
+                    choose(dialog);
+                }
+                catch (Exception ex) { failure = ex; dialog.Close(); }
+            }));
+            try
+            {
+                timeout.Start();
+                bool? result = dialog.ShowDialog();
+                if (failure is not null) throw failure;
+                if ((result == true) != expected || !owner.IsVisible || !File.Exists(backup) ||
+                    System.Text.Json.JsonSerializer.Serialize(owner.Vm.Service.Snapshot, JsonStore.JsonOptions) != dataBefore)
+                    throw new InvalidOperationException("Somente Atualizar agora deve confirmar; cancelar precisa preservar o PDV, os dados e o backup.");
+            }
+            finally { timeout.Stop(); if (dialog.IsVisible) dialog.Close(); }
+        }
+        static void Click(Button button) => ((IInvokeProvider)new ButtonAutomationPeer(button).GetPattern(PatternInterface.Invoke)).Invoke();
+        CheckChoice(backup, true, dialog => Click(dialog.ConfirmButton), "41-confirmacao-atualizacao.png");
+        CheckChoice(longPath, false, dialog => Click(dialog.LaterButton), "42-confirmacao-caminho-longo.png");
+        CheckChoice(backup, false, dialog => Click(dialog.CloseButton));
+        CheckChoice(backup, false, dialog => dialog.RaiseEvent(KeyEvent(dialog, Key.Escape, Keyboard.PreviewKeyDownEvent)));
+        CheckChoice(backup, false, dialog => dialog.Close());
+        File.WriteAllText(Path.Combine(output, "confirmacao-atualizacao-smoke-ok.txt"), "Confirmação modal, cancelamento, Esc e fechamento conferidos. Versão e caminho completo selecionável do backup visíveis, incluindo caminho longo. PDV, dados e backup preservados; nenhum instalador aberto durante a conferência.\n");
+    }
+    private static void CheckComboBoxScrolling(MainWindow window, string output)
+    {
+        string page = window.Vm.Page;
+        var combo = window.StockSortFilter;
+        object? selection = combo.SelectedItem;
+        double maximumHeight = combo.MaxDropDownHeight;
+        var comboPeer = new ComboBoxAutomationPeer(combo);
+        var provider = (IExpandCollapseProvider)comboPeer.GetPattern(PatternInterface.ExpandCollapse);
+        try
+        {
+            window.Vm.Page = "Estoque"; combo.MaxDropDownHeight = 130; FlushLayout(window);
+            provider.Expand(); FlushLayout(window);
+            var viewer = combo.Template.FindName("PART_PopupScrollViewer", combo) as ScrollViewer
+                ?? throw new InvalidOperationException("A lista de opções precisa usar o controle de rolagem configurado.");
+            viewer.UpdateLayout();
+            if (!ComboBoxScrolling.GetIsEnabled(viewer) || viewer.CanContentScroll || viewer.ScrollableHeight <= 50)
+                throw new InvalidOperationException("A lista aberta precisa ter rolagem física com sensibilidade reduzida.");
+            void Wheel(int delta)
+            {
+                var args = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = Mouse.PreviewMouseWheelEvent };
+                viewer.RaiseEvent(args); FlushLayout(window); viewer.UpdateLayout();
+                if (!args.Handled || !Equals(combo.SelectedItem, selection))
+                    throw new InvalidOperationException("Rolar a lista de opções precisa consumir o gesto sem trocar a seleção.");
+            }
+            viewer.ScrollToVerticalOffset(40); FlushLayout(window);
+            double before = viewer.VerticalOffset;
+            Wheel(-120);
+            double expected = SystemParameters.WheelScrollLines == 0 ? before : before + 22;
+            if (Math.Abs(viewer.VerticalOffset - expected) > 0.5)
+                throw new InvalidOperationException("Um passo da roda precisa mover apenas 22 pixels na lista de opções.");
+            before = viewer.VerticalOffset; Wheel(-20);
+            expected = SystemParameters.WheelScrollLines == 0 ? before : before + 22d / 6;
+            if (Math.Abs(viewer.VerticalOffset - expected) > 0.5)
+                throw new InvalidOperationException("Deltas pequenos do touchpad precisam mover a lista proporcionalmente, sem saltar várias opções.");
+            before = viewer.VerticalOffset; Wheel(20);
+            expected = SystemParameters.WheelScrollLines == 0 ? before : before - 22d / 6;
+            if (Math.Abs(viewer.VerticalOffset - expected) > 0.5)
+                throw new InvalidOperationException("A rolagem suave precisa funcionar nos dois sentidos.");
+            viewer.ScrollToTop(); FlushLayout(window); Wheel(120);
+            if (viewer.VerticalOffset != 0) throw new InvalidOperationException("A lista não pode ultrapassar seu início.");
+            viewer.ScrollToBottom(); FlushLayout(window); Wheel(-120);
+            if (Math.Abs(viewer.VerticalOffset - viewer.ScrollableHeight) > 0.5) throw new InvalidOperationException("A lista não pode ultrapassar seu final.");
+            viewer.ScrollToTop(); FlushLayout(window);
+            if (combo.Template.FindName("PART_Popup", combo) is System.Windows.Controls.Primitives.Popup popup && popup.Child is FrameworkElement body)
+                CaptureElement(body, Path.Combine(output, "43-opcoes-rolagem-controlada.png"));
+            combo.SelectedIndex = 0; FlushLayout(window);
+            var first = (ComboBoxItem)combo.ItemContainerGenerator.ContainerFromIndex(0);
+            first.Focus(); Keyboard.Focus(first); FlushLayout(window);
+            var next = KeyEvent(window, Key.Down, Keyboard.KeyDownEvent); first.RaiseEvent(next); FlushLayout(window);
+            var accept = KeyEvent(window, Key.Enter, Keyboard.KeyDownEvent); combo.RaiseEvent(accept); FlushLayout(window);
+            if (combo.SelectedIndex != 1 || !next.Handled || !accept.Handled || combo.IsDropDownOpen)
+                throw new InvalidOperationException($"Seta para baixo e Enter precisam selecionar a próxima opção e fechar a lista. Índice={combo.SelectedIndex}; seta={next.Handled}; Enter={accept.Handled}; foco={Keyboard.FocusedElement}.");
+            provider.Expand(); FlushLayout(window);
+            var itemPeer = comboPeer.GetChildren().Single(peer => peer.GetName() == combo.Items[2].ToString());
+            ((ISelectionItemProvider)itemPeer.GetPattern(PatternInterface.SelectionItem)).Select(); FlushLayout(window);
+            if (combo.SelectedIndex != 2) throw new InvalidOperationException("A lista precisa continuar permitindo selecionar uma opção.");
+        }
+        finally
+        {
+            provider.Collapse(); combo.MaxDropDownHeight = maximumHeight; combo.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, selection);
+            window.Vm.Page = page; FlushLayout(window);
+        }
+        File.WriteAllText(Path.Combine(output, "opcoes-rolagem-smoke-ok.txt"), "Lista real de ordenação conferida: roda120, deltas20 do touchpad nos dois sentidos, limites inicial/final, seleção preservada ao rolar, seleção por teclado e automação mantidas.\n");
     }
     private static void CheckStockUi(MainWindow window, string output)
     {
