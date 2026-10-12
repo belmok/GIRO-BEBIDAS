@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.8.1 — 12/10/2026
+
+Configurações gerais e configuração fiscal separadas. Os dados do depósito, backup e auditoria ficam somente em Configurações. O menu Cupom fiscal abre a página própria com seis cartões para emitente, ambiente e numeração, A1, CSC, impressora e tributos; a conferência das pendências fica abaixo dos cadastros.
+
+O cartão da impressora abre sua seleção, com campo visível e em foco, preservando a impressora padrão do PDV. Atalhos para cadastrar equipamentos e revisar produtos têm ações de navegação. Atualizar conferência mostra quantidades de itens conferidos e pendentes. Cancelar formulários preserva configurações ainda em edição.
+
+273 verificações de negócio e 47 de notas/publicação aprovadas. Navegação real, botões, salvamento e cancelamento, limites da numeração, permissões, pequenos deltas e limites de rolagem conferidos em dados isolados, incluindo janela menor. Aplicativo empacotado, instalador e remoção conferidos antes da publicação.
+
 ## 1.8.0 — 12/10/2026
 
 Configurações redesenhadas com campos ilustrados, interruptores e cartão de backup com arte de nuvem. Cupom fiscal e NFC-e fica na mesma página; o atalho do menu leva diretamente à seção. Conferência com tabela de itens e indicadores verde/âmbar, mantendo os cadastros fiscais e o aviso de validação local. Detalhes do caixa organizados em abertura, vendas e fechamento, com situação e diferença destacadas por cor.

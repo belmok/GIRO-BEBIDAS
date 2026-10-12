@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.8.0
+# Guia do Giro Bebidas — versão 1.8.1
 
 ## Instalação e primeiro acesso
 
@@ -90,14 +90,16 @@ Esse recurso precisa ser compatível com o protocolo real da balança. USB só f
 
 ## Configuração do cupom fiscal
 
-O administrador encontra **Cupom fiscal e NFC-e** na mesma tela de **Configurações**, abaixo de backup e recuperação. O acesso **Cupom fiscal** no menu leva diretamente a essa seção. Ela prepara os parâmetros de **NFC-e, modelo 65**. A emissão ainda depende de integração com um emissor SEFAZ; preencher esta tela não transforma o comprovante atual em documento fiscal.
+O administrador encontra a tela **Configuração fiscal** pelo menu **Cupom fiscal**. Ela reúne os parâmetros de **NFC-e, modelo 65**, separadamente dos dados do depósito, backup e registro de operações, que ficam somente em **Configurações**. A emissão ainda depende de integração com um emissor SEFAZ; preencher esta tela não transforma o comprovante atual em documento fiscal.
 
 1. Em **Dados da empresa**, informe razão social, nome fantasia, CNPJ, inscrição estadual, regime tributário (CRT), UF, município, código IBGE e endereço. O cadastro aceita CNPJ numérico e alfanumérico e confere os dígitos verificadores. É possível salvar um cadastro parcial.
 2. Em **Configurar NFC-e**, escolha homologação ou produção, série, próximo número, identificação do caixa e uma impressora cadastrada em **Equipamentos**. Cada ambiente mantém sua própria série e numeração. Vendas não fiscais não consomem esses números.
 3. Em **Importar A1**, escolha o certificado `.pfx` ou `.p12` e informe a senha. O sistema verifica a abertura, a presença da chave privada e a validade. Não certifica a cadeia ICP-Brasil nem a titularidade do emitente. Certificados A3, tokens e cartões não são atendidos neste módulo.
 4. Em **Cadastrar / trocar CSC**, selecione o ambiente e informe identificador e token fornecidos pela SEFAZ. Os códigos de homologação e produção ficam separados; o token salvo não é exibido.
 5. No cadastro dos produtos, preencha NCM, CEST quando aplicável, CFOP de saída, CSOSN ou CST de ICMS e origem da mercadoria, conforme orientação contábil. Esses campos verificam o formato e não calculam os tributos nem substituem uma configuração tributária completa.
-6. Use **Conferir configuração** para ver as pendências. A conferência é local, sem consultar credenciamento ou autorização na SEFAZ. Mesmo com os campos preenchidos, a integração do emissor permanece pendente nesta versão.
+6. No cartão da impressora, use **Configurar impressora** para escolher uma impressora já cadastrada e salvar. **Cadastrar em Equipamentos** abre o cadastro quando necessário; a impressora fiscal pode ser diferente da impressora padrão do PDV.
+7. Use **Atualizar conferência** para atualizar as pendências e ver quantos itens estão conferidos localmente. A conferência é local, sem consultar credenciamento ou autorização na SEFAZ. Mesmo com os campos preenchidos, a integração do emissor permanece pendente nesta versão.
+8. **Revisar produtos**, no cartão de natureza da operação e tributos, abre **Produtos e estoque**. Use **Editar produto** para conferir NCM, CEST, CFOP, CSOSN/CST e origem de cada mercadoria.
 
 Certificado A1, sua senha e o token CSC são protegidos pelo Windows e acompanham o backup. Ao restaurar em outro computador ou usuário do Windows, reimporte o A1 e cadastre os CSCs novamente. Mantenha também o arquivo original do certificado em local seguro.
 

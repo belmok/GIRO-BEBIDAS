@@ -135,7 +135,7 @@ public sealed class MainViewModel : Observable
     private bool isProductsList;
     private double productCardWidth = 194;
     private CustomerChoice? cartCustomer;
-    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value is "Fiscal" or "Configurações" && IsAdmin) BuildFiscalChecks(); } } }
+    public string Page { get => page; set { if (Set(ref page, value)) { Changed(nameof(PageTitle)); Changed(nameof(PageSubtitle)); if (value == "Fiscal" && IsAdmin) BuildFiscalChecks(); } } }
     public string Search { get => search; set { if (Set(ref search, value)) FilterProducts(); } }
     public string StockSearch { get => stockSearch; set { if (Set(ref stockSearch, value)) FilterStock(); } }
     public string StockCategory { get => stockCategory; set { if (Set(ref stockCategory, value)) FilterStock(); } }
@@ -164,7 +164,7 @@ public sealed class MainViewModel : Observable
     public decimal Discount { get => discount; set { if (Set(ref discount, value)) Changed(nameof(Total)); } }
     public decimal DeliveryFee { get => deliveryFee; set { if (Set(ref deliveryFee, value)) Changed(nameof(Total)); } }
     public CustomerChoice? CartCustomer { get => cartCustomer; set => Set(ref cartCustomer, value); }
-    public string PageTitle => Page switch { "PDV" => "Frente de caixa", "Estoque" => "Produtos e estoque", "Clientes" => "Clientes e fiados", "Caixa" => "Controle do caixa", "Vendas" => "Histórico de vendas", "Relatórios" => "Resultados do depósito", "Usuários" => "Usuários e acessos", "Equipamentos" => "Impressoras e balanças", "Fiscal" => "Cupom fiscal e NFC-e", "Atualizações" => "Atualizações do sistema", "Configurações" => "Configurações", _ => "Pedidos e entregas" };
+    public string PageTitle => Page switch { "PDV" => "Frente de caixa", "Estoque" => "Produtos e estoque", "Clientes" => "Clientes e fiados", "Caixa" => "Controle do caixa", "Vendas" => "Histórico de vendas", "Relatórios" => "Resultados do depósito", "Usuários" => "Usuários e acessos", "Equipamentos" => "Impressoras e balanças", "Fiscal" => "Configuração fiscal", "Atualizações" => "Atualizações do sistema", "Configurações" => "Configurações", _ => "Pedidos e entregas" };
     public string PageSubtitle => Page switch { "PDV" => "Tudo pronto para a próxima venda.", "Estoque" => "Cuide dos seus produtos e acompanhe cada movimentação.", "Clientes" => "Um atendimento próximo, com crédito sob controle.", "Caixa" => "Entradas, saídas e fechamento em um só lugar.", "Vendas" => "Consulte vendas, reimprima cupons e confira os detalhes.", "Relatórios" => "Acompanhe a receita, o custo e o lucro dos seus produtos.", "Usuários" => "Defina quem pode acessar e administrar o depósito.", "Equipamentos" => "Conecte o que você usa no balcão.", "Fiscal" => "Prepare os dados fiscais e acompanhe o que falta configurar.", "Atualizações" => "Consulte as novidades e mantenha seu PDV atualizado.", "Configurações" => "Deixe o sistema com a cara do seu negócio.", _ => "Do balcão até a entrega, acompanhe cada pedido." };
     public ICommand AddProductCommand { get; }
     public ICommand IncrementCommand { get; }
@@ -299,7 +299,7 @@ public sealed class MainViewModel : Observable
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
-        FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page is "Fiscal" or "Configurações" && IsAdmin) BuildFiscalChecks();
+        FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
         foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }

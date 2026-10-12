@@ -13,12 +13,13 @@ public partial class FiscalPanel : UserControl
     public FiscalPanel() => InitializeComponent();
     private MainWindow Main => (MainWindow)Window.GetWindow(this);
     private MainViewModel Vm => (MainViewModel)DataContext;
-    private void Run(Action action, string? success = null)
+    private void Run(Func<bool> action, string? success = null)
     {
         try
         {
             if (!Vm.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
-            action(); Vm.Refresh(); if (success is not null) Vm.Notify?.Invoke(success);
+            if (!action()) return;
+            Vm.Refresh(); if (success is not null) Vm.Notify?.Invoke(success);
         }
         catch (Exception ex) { Vm.Notify?.Invoke(ex.Message); }
     }
@@ -46,7 +47,7 @@ public partial class FiscalPanel : UserControl
         });
         return d;
     }
-    private void Issuer_Click(object sender, RoutedEventArgs e) => Run(() => { if (CreateIssuerDialog().ShowDialog() == true) Vm.Notify?.Invoke("Dados fiscais da empresa salvos."); });
+    private void Issuer_Click(object sender, RoutedEventArgs e) => Run(() => CreateIssuerDialog().ShowDialog() == true, "Dados fiscais da empresa salvos.");
     internal FormDialog CreateOptionsDialog()
     {
         var fiscal = Vm.Snapshot.Fiscal;
@@ -75,7 +76,36 @@ public partial class FiscalPanel : UserControl
         };
         return d;
     }
-    private void Options_Click(object sender, RoutedEventArgs e) => Run(() => { if (CreateOptionsDialog().ShowDialog() == true) Vm.Notify?.Invoke("Parâmetros da NFC-e salvos."); });
+    private void Options_Click(object sender, RoutedEventArgs e) => Run(() => CreateOptionsDialog().ShowDialog() == true, "Parâmetros da NFC-e salvos.");
+    internal FormDialog CreatePrinterDialog()
+    {
+        var dialog = CreateOptionsDialog();
+        dialog.Loaded += (_, _) =>
+        {
+            dialog.ScrollToField("printer");
+            dialog.Field<ComboBox>("printer").Focus();
+        };
+        return dialog;
+    }
+    private void Printer_Click(object sender, RoutedEventArgs e) => Run(() => CreatePrinterDialog().ShowDialog() == true, "Impressora fiscal salva.");
+    private void Equipment_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (!Vm.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+            Vm.Page = "Equipamentos";
+        }
+        catch (Exception ex) { Vm.Notify?.Invoke(ex.Message); }
+    }
+    private void Products_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (!Vm.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
+            Vm.Page = "Estoque";
+        }
+        catch (Exception ex) { Vm.Notify?.Invoke(ex.Message); }
+    }
     private void Csc_Click(object sender, RoutedEventArgs e) => Run(() =>
     {
         var fiscal = Vm.Snapshot.Fiscal;
@@ -84,25 +114,29 @@ public partial class FiscalPanel : UserControl
         var identifier = d.Text("id", "Identificador CSC • até 6 dígitos", fiscal.ActiveProfile.CscId); d.Password("token", "Token CSC").MaxLength = 256;
         environment.SelectionChanged += (_, _) => { if (environment.SelectedItem is FiscalChoice<FiscalEnvironment> choice) identifier.Text = (choice.Value == FiscalEnvironment.Producao ? fiscal.Production : fiscal.Homologation).CscId; };
         d.Submit = f => Vm.Service.SaveFiscalCsc(f.Selected<FiscalChoice<FiscalEnvironment>>("environment").Value, f.Value("id"), f.Value("token"));
-        if (d.ShowDialog() == true) Vm.Notify?.Invoke("CSC protegido e salvo no ambiente escolhido.");
-    });
+        return d.ShowDialog() == true;
+    }, "CSC protegido e salvo no ambiente escolhido.");
     private void Certificate_Click(object sender, RoutedEventArgs e) => Run(() =>
     {
         var pick = new OpenFileDialog { Title = "Importar certificado digital A1", Filter = "Certificado A1|*.pfx;*.p12" };
-        if (pick.ShowDialog(Main) != true) return;
+        if (pick.ShowDialog(Main) != true) return false;
         if (new FileInfo(pick.FileName).Length > 2_000_000) throw new InvalidOperationException("Escolha um certificado A1 de até 2 MB.");
         var d = new FormDialog(Main, "Importar certificado A1", "Arquivo, chave privada e senha serão protegidos pelo Windows. Para outro computador ou usuário do Windows, será necessário importar novamente.", "Importar");
         d.Info(Path.GetFileName(pick.FileName)); d.Password("password", "Senha do certificado A1");
         d.Submit = f => { byte[] bytes = File.ReadAllBytes(pick.FileName); try { Vm.Service.ImportFiscalCertificate(bytes, f.Value("password")); } finally { CryptographicOperations.ZeroMemory(bytes); } };
-        if (d.ShowDialog() == true) Vm.Notify?.Invoke("Certificado A1 importado e protegido.");
-    });
+        return d.ShowDialog() == true;
+    }, "Certificado A1 importado e protegido.");
     private void RemoveCertificate_Click(object sender, RoutedEventArgs e) => Run(() =>
     {
-        if (MessageBox.Show(Main, "Remover o certificado da configuração? O arquivo original não será alterado.", "Giro Bebidas", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) Vm.Service.RemoveFiscalCertificate();
+        if (MessageBox.Show(Main, "Remover o certificado da configuração? O arquivo original não será alterado.", "Giro Bebidas", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
+        Vm.Service.RemoveFiscalCertificate();
+        return true;
     });
     private void RemoveCsc_Click(object sender, RoutedEventArgs e) => Run(() =>
     {
-        if (MessageBox.Show(Main, $"Remover o CSC do ambiente {Vm.Snapshot.Fiscal.EnvironmentLabel}?", "Giro Bebidas", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) Vm.Service.RemoveFiscalCsc(Vm.Snapshot.Fiscal.Options.Environment);
+        if (MessageBox.Show(Main, $"Remover o CSC do ambiente {Vm.Snapshot.Fiscal.EnvironmentLabel}?", "Giro Bebidas", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return false;
+        Vm.Service.RemoveFiscalCsc(Vm.Snapshot.Fiscal.Options.Environment);
+        return true;
     });
     internal void ShowChecks() { UpdateLayout(); ChecksCard.BringIntoView(); }
     private void Check_Click(object sender, RoutedEventArgs e)
@@ -111,7 +145,8 @@ public partial class FiscalPanel : UserControl
         {
             if (!Vm.IsAdmin) throw new UnauthorizedAccessException("Esta ação exige um administrador.");
             Vm.BuildFiscalChecks();
-            Vm.Notify?.Invoke("Conferência local atualizada. A autorização SEFAZ continua pendente de integração.");
+            int complete = Vm.FiscalChecks.Count(item => item.Complete), pending = Vm.FiscalChecks.Count - complete;
+            Vm.Notify?.Invoke($"Conferência local: {complete} {(complete == 1 ? "item conferido" : "itens conferidos")} e {pending} {(pending == 1 ? "pendência" : "pendências")}. A autorização SEFAZ continua pendente de integração.");
             ShowChecks();
         }
         catch (Exception ex) { Vm.Notify?.Invoke(ex.Message); }

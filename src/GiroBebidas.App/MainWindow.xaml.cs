@@ -27,7 +27,7 @@ public partial class MainWindow : Window
             if (args.PropertyName is nameof(MainViewModel.StockSort) or nameof(MainViewModel.StockSortDescending)) UpdateStockSortHeaders();
             if (args.PropertyName == nameof(MainViewModel.Page)) Dispatcher.InvokeAsync(() =>
             {
-                if (Vm.Page == "Fiscal") FiscalConfigurationPanel.BringIntoView();
+                if (Vm.Page == "Fiscal") FiscalScroll.ScrollToTop();
                 else if (Vm.Page == "Configurações") SettingsScroll.ScrollToTop();
             }, DispatcherPriority.Loaded);
         };
