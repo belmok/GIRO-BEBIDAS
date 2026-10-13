@@ -118,7 +118,8 @@ public sealed partial class MainViewModel : Observable
             Changed(nameof(OrderHasSelection)); Changed(nameof(OrderCanChangeStatus)); Changed(nameof(OrderCanReceiveSelected));
         }
     }
-    public Sale? SelectedSale { get; set; }
+    private Sale? selectedSale;
+    public Sale? SelectedSale { get => selectedSale; set { if (Set(ref selectedSale, value)) SalesSelectionChanged(); } }
     public UserAccount? SelectedUser { get; set; }
     private CashSession? selectedCash;
     public CashSession? SelectedCash { get => selectedCash; set { if (Set(ref selectedCash, value)) Changed(nameof(CashHasSelectedClosed)); } }
@@ -191,6 +192,7 @@ public sealed partial class MainViewModel : Observable
         RemoveCommand = new RelayCommand(p => { if (p is CartLine line) { Cart.Remove(line); CartChanged(); } }, _ => CanEditCart);
         OrderPreviousPageCommand = new RelayCommand(_ => { if (OrderCanPrevious) OrderPageNumber--; }, _ => OrderCanPrevious);
         OrderNextPageCommand = new RelayCommand(_ => { if (OrderCanNext) OrderPageNumber++; }, _ => OrderCanNext);
+        InitializeSalesHistory();
         Refresh();
     }
     public void AddProduct(Product p, decimal quantity)
@@ -297,7 +299,7 @@ public sealed partial class MainViewModel : Observable
         Guid? customerId = CartCustomer?.Id;
         CustomerOptions = [new(null, "Consumidor final"), .. Snapshot.Customers.OrderBy(c => c.Name).Select(c => new CustomerChoice(c.Id, c.Name))];
         CartCustomer = CustomerOptions.FirstOrDefault(c => c.Id == customerId) ?? CustomerOptions[0];
-        Orders = Snapshot.Orders.OrderByDescending(o => o.Date).ToList(); Sales = Snapshot.Sales.OrderByDescending(v => v.Date).ToList();
+        Orders = Snapshot.Orders.OrderByDescending(o => o.Date).ToList(); Sales = Snapshot.Sales.OrderByDescending(v => v.Date).ToList(); RefreshSalesHistory();
         Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); FilterCash();
         StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
         RecentStockMovements = StockMovements.Take(5).Select(m => new StockMovementRow(m)).ToList(); Changed(nameof(RecentStockMovements));

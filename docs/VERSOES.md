@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.11.0 — 12/10/2026
+
+Histórico de vendas redesenhado com cartões de resumo, busca, datas inclusivas, pagamento, situação, Aplicar/Limpar, paginação e ordenação de todos os resultados. Canceladas ficam fora do total concluído e dos clientes; os resumos e o CSV consideram o resultado completo. Menu e ações por linha usam a venda correta, preservando preços históricos e dados nas consultas.
+
+Detalhes da venda organizados em cartões com produtos, pagamento, totais e motivo de cancelamento. Cancelamento consulta o estado atual do caixa, exige motivo e administrador e mantém as proteções de saldo, caixa de origem e fiado recebido. Logo com garrafa substitui o G no menu lateral e na entrada.
+
+367 verificações de negócio e 47 de notas/publicação aprovadas. Interface nativa conferida com vendas em dois caixas, filtros, datas inválidas, paginação, ordenação, seleção, valores históricos, CSV, reimpressão em software e estorno persistido. Permissões, cancelamento sem confirmação, janela menor, logos e rolagem conferidos em dados isolados. Aplicativo empacotado, instalação e remoção conferidos antes da publicação.
+
 ## 1.10.0 — 12/10/2026
 
 Menu lateral organizado em Vendas e operação, Fiscal, Gestão e Configurações, com seleção verde e faixa lateral. Usuário e perfil permanecem fixos abaixo da navegação. O cartão promocional foi removido; a versão fica na barra inferior e no painel de atualizações.

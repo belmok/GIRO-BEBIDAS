@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.10.0
+# Guia do Giro Bebidas — versão 1.11.0
 
 ## Instalação e primeiro acesso
 
@@ -82,7 +82,11 @@ Em **Controle do caixa**, os cartões ilustrados mostram dinheiro em verde, Pix 
 
 Escolha **Hoje**, **Últimos 7 dias**, **Últimos 30 dias** ou **Todo o período** para filtrar o histórico e as movimentações. O filtro não altera os totais do caixa aberto. No menu de três pontos de cada caixa, use **Ver detalhes**, **Imprimir fechamento** ou **Exportar relatório** em CSV. A impressão exige caixa encerrado; contagem e diferença ficam disponíveis após o fechamento. Os registros encerrados permanecem preservados.
 
-Em **Vendas**, consulte detalhes, reimprima o cupom ou exporte CSV. O administrador pode cancelar uma venda no caixa de origem ainda aberto, desde que não tenha recebimento de fiado. O estoque volta e os totais de caixa são ajustados. Não se cancela a mesma venda duas vezes.
+Em **Vendas**, combine busca por número, cliente ou vendedor com datas inicial e final, pagamento e situação. Clique em **Aplicar filtros** para atualizar; **Limpar** retorna ao histórico completo. A data final inclui todas as vendas daquele dia. Se o intervalo estiver invertido ou a data for inválida, os resultados aplicados são preservados.
+
+Os cartões mostram o total das vendas concluídas, as quantidades concluídas e canceladas, o valor cancelado e os clientes nas vendas concluídas. Os resumos consideram todos os resultados filtrados, inclusive as outras páginas. Consumidor final conta como um grupo sem cadastro. Escolha 10, 20 ou 50 vendas por página; clicar no cabeçalho ordena o resultado completo. **Exportar CSV** inclui todas as vendas dos filtros aplicados.
+
+Use os botões da linha ou o menu de três pontos para abrir **Ver detalhes**, **Reimprimir cupom** ou **Cancelar venda**. Os detalhes preservam os produtos e preços registrados no momento da venda. O administrador pode cancelar uma venda no caixa de origem ainda aberto, desde que não tenha recebimento de fiado e exista saldo para estornar uma venda em dinheiro. Informe o motivo e confirme. O estoque volta e os totais de caixa são ajustados; a venda permanece no histórico, marcada em vermelho. Não se cancela a mesma venda duas vezes.
 
 Em **Relatórios**, escolha o período e consulte receita dos produtos, custos históricos, lucro e margem bruta. O desconto é distribuído entre os produtos; canceladas ficam fora do resultado. A entrega e as despesas operacionais não entram no lucro bruto dos produtos.
 

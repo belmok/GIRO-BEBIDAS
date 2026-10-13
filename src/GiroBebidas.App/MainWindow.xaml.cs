@@ -30,6 +30,7 @@ public partial class MainWindow : Window
                 if (Vm.Page == "Fiscal") FiscalScroll.ScrollToTop();
                 else if (Vm.Page == "Configurações") SettingsScroll.ScrollToTop();
                 else if (Vm.Page == "Equipamentos") { RefreshEquipmentInventory(); EquipmentScroll.ScrollToTop(); }
+                else if (Vm.Page == "Vendas") { SalesScroll.ScrollToTop(); UpdateSalesSortHeaders(); }
             }, DispatcherPriority.Loaded);
         };
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
@@ -473,22 +474,6 @@ public partial class MainWindow : Window
         };
         d.ShowDialog();
     }
-    private void SaleDetails_Click(object sender, RoutedEventArgs e) => Guard(() =>
-    {
-        var sale = Require(Vm.SelectedSale, "uma venda");
-        var d = new FormDialog(this, $"Venda {sale.NumberLabel}", $"{sale.Date:dd/MM/yyyy HH:mm} • {sale.UserName} • {sale.StatusLabel}", "Fechar");
-        d.Info($"Cliente: {sale.CustomerName}\n{sale.CustomerPhone}\n{sale.DeliveryAddress}");
-        foreach (var line in sale.Lines) d.Info($"{line.Quantity:0.###} {line.Unit} • {line.ProductName}\n{line.UnitPrice:C2} cada  →  {line.GrossTotal:C2}");
-        d.Info($"Subtotal: {sale.Subtotal:C2}\nDesconto: {sale.Discount:C2}\nEntrega: {sale.DeliveryFee:C2}\nTotal: {sale.Total:C2}\n{sale.PaymentLabel}\nTroco: {sale.Change:C2}");
-        if (sale.Notes.Length > 0) d.Info(sale.Notes); if (sale.Canceled) d.Info($"Cancelamento: {sale.CancelReason}");
-        d.Action("Imprimir cupom", () => ReceiptPrinter.PrintSale(d, Vm.Snapshot, sale)); d.ShowDialog();
-    });
-    private void CancelSale_Click(object sender, RoutedEventArgs e) => Guard(() =>
-    {
-        var sale = Require(Vm.SelectedSale, "uma venda"); var d = new FormDialog(this, "Cancelar venda", $"{sale.NumberLabel} • Os produtos voltarão ao estoque e o caixa será atualizado.", "Confirmar cancelamento");
-        d.Text("reason", "Motivo"); d.Submit = f => Vm.Service.CancelSale(sale.Id, f.Value("reason")); if (d.ShowDialog() == true) Notify("Venda cancelada; estoque e caixa atualizados.");
-    });
-    private void PrintSale_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintSale(this, Vm.Snapshot, Require(Vm.SelectedSale, "uma venda")));
     private void PrintOrder_Click(object sender, RoutedEventArgs e) => Guard(() => ReceiptPrinter.PrintOrder(this, Vm.Service.Snapshot, OrderRow(sender)));
     private void PrintCash_Click(object sender, RoutedEventArgs e) => CashRowPrint_Click(sender, e);
     private static string Csv(string value)
@@ -502,8 +487,6 @@ public partial class MainWindow : Window
         if (file.ShowDialog(this) != true) return;
         File.WriteAllLines(file.FileName, rows.Select(r => string.Join(";", r.Select(Csv))), new UTF8Encoding(true)); Notify("Relatório exportado.");
     }
-    private void ExportSales_Click(object sender, RoutedEventArgs e) => Guard(() => ExportCsv($"vendas-{DateTime.Today:yyyyMMdd}.csv",
-        new[] { new[] { "Venda", "Data", "Cliente", "Pagamento", "Total", "Vendedor", "Situação" } }.Concat(Vm.Sales.Select(v => new[] { v.NumberLabel, v.Date.ToString("dd/MM/yyyy HH:mm"), v.CustomerName, v.PaymentLabel, v.Total.ToString("0.00"), v.UserName, v.StatusLabel }))));
     private void ExportProfit_Click(object sender, RoutedEventArgs e) => Guard(() => ExportCsv($"lucratividade-{DateTime.Today:yyyyMMdd}.csv",
         new[] { new[] { "Produto", "Quantidade", "Receita líquida", "Custo", "Lucro bruto", "Margem" } }.Concat(Vm.ProfitRows.Select(v => new[] { v.Name, v.Quantity.ToString("0.###"), v.Revenue.ToString("0.00"), v.Cost.ToString("0.00"), v.Profit.ToString("0.00"), v.Margin.ToString("P2") }))));
     private void SaveSettings_Click(object sender, RoutedEventArgs e) => Guard(() => Vm.Service.SaveSettings(Vm.Snapshot.Settings), "Configurações salvas.");

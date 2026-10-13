@@ -6,7 +6,7 @@ Aplicativo para Windows, com identidade e depósito fictícios, desenvolvido em 
 
 ## Executar a versão pronta
 
-Abra `InstalarGiroBebidas.exe` na pasta principal, ou `artifacts/distribuicao/1.10.0/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
+Abra `InstalarGiroBebidas.exe` na pasta principal, ou `artifacts/distribuicao/1.11.0/InstalarGiroBebidas.exe`. O instalador cria atalhos, registra a remoção nos aplicativos do Windows e inclui o desinstalador. A distribuição contém o .NET e funciona sem instalar o runtime separadamente em Windows 10/11 de 64 bits.
 
 Também é possível abrir `GiroBebidas.exe` diretamente ou extrair o pacote portátil. O desinstalador atua sobre instalações feitas pelo instalador; para a versão portátil, basta remover os executáveis. Os dados ficam em outra pasta.
 
@@ -27,6 +27,7 @@ O cadastro inicial contém 16 produtos fictícios para experimentar. Não há ve
 - Abertura, suprimento, sangria e fechamento de caixa por forma de pagamento.
 - Menu no indicador do caixa para abrir/fechar, consultar o histórico e configurar fundo de troco sugerido e impressão automática.
 - Histórico, cupom com endereço de entrega, cancelamento com estorno e exportação CSV.
+- Histórico de vendas com resumos, busca, datas, pagamento, situação, ordenação, paginação e ações por venda; exportação de todos os resultados filtrados.
 - Relatório de lucratividade com custo histórico e rateio de desconto entre produtos.
 - Cadastro de impressoras do Windows, papel 58/80 mm e A4, impressão automática opcional.
 - Cadastro e teste de balanças seriais 8N1, leitura de texto em kg ou inteiro em gramas, pesagem manual.

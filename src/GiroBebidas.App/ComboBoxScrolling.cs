@@ -6,7 +6,6 @@ namespace GiroBebidas.App;
 
 public static class ComboBoxScrolling
 {
-    private const double PixelsPerNotch = 22;
     public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
         "IsEnabled", typeof(bool), typeof(ComboBoxScrolling), new PropertyMetadata(false, OnIsEnabledChanged));
 
@@ -31,8 +30,8 @@ public static class ComboBoxScrolling
     internal static void ScrollPopup(ScrollViewer viewer, int delta)
     {
         if (delta == 0 || viewer.ScrollableHeight <= 0) return;
-        // Physical offsets retain small touchpad deltas instead of rounding to items.
-        double offset = viewer.VerticalOffset - delta / 120.0 * PixelsPerNotch;
-        viewer.ScrollToVerticalOffset(Math.Clamp(offset, 0, viewer.ScrollableHeight));
+        // Share the queued offset accumulator so consecutive touchpad deltas are
+        // retained before WPF finishes applying its scroll requests.
+        ControlledScrolling.ScrollArea(viewer, delta);
     }
 }

@@ -105,6 +105,7 @@ public static partial class SmokeRunner
             CheckFiscalSettingsUi(output);
             CheckEquipmentUi(output);
             CheckNavigationUi(output);
+            CheckSalesUi(output);
             CheckCashDetails(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
@@ -792,9 +793,17 @@ public static partial class SmokeRunner
             CaptureElement(cashWindow.CashStatusMenu, Path.Combine(output, "33-menu-caixa-aberto.png"));
             EscapeCashMenu(cashWindow);
             OpenCashMenu(cashWindow, true, true);
+            // MenuBase dismisses outside clicks only while it owns mouse capture.
+            // Offscreen QA can lose that capture to the desktop; restore this native
+            // precondition and send the complete down/up sequence. WPF may ignore
+            // the first release when a physical click was held as the menu opened.
+            if (!Mouse.Capture(cashWindow.CashStatusMenu, CaptureMode.SubTree))
+                throw new InvalidOperationException("O menu renderizado precisa capturar o mouse para conferir um clique externo.");
             cashWindow.CashStatusMenu.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = Mouse.PreviewMouseDownOutsideCapturedElementEvent });
+            if (cashWindow.CashStatusMenu.IsOpen)
+                cashWindow.CashStatusMenu.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = Mouse.PreviewMouseUpOutsideCapturedElementEvent });
             FlushLayout(cashWindow);
-            if (cashWindow.CashStatusMenu.IsOpen) throw new InvalidOperationException("Um clique fora do menu precisa fechar as opções do caixa.");
+            if (cashWindow.CashStatusMenu.IsOpen) throw new InvalidOperationException($"Um clique fora do menu precisa fechar as opções do caixa. Captura={Mouse.Captured?.GetType().Name ?? "nenhuma"}; captura na árvore={cashWindow.CashStatusMenu.IsMouseCaptureWithin}; permanece aberto={cashWindow.CashStatusMenu.StaysOpen}.");
             decimal expected = cashWindow.Vm.CashSummary?.Expected ?? throw new InvalidOperationException("O caixa de teste precisa estar aberto.");
             cashService.CloseCash(expected, "Conferência automática da aparência do caixa.");
             cashWindow.Vm.Refresh(); FlushLayout(cashWindow); AssertCashStatus(cashWindow, false);
