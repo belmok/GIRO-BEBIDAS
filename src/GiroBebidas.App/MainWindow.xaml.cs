@@ -29,10 +29,11 @@ public partial class MainWindow : Window
             {
                 if (Vm.Page == "Fiscal") FiscalScroll.ScrollToTop();
                 else if (Vm.Page == "Configurações") SettingsScroll.ScrollToTop();
+                else if (Vm.Page == "Equipamentos") { RefreshEquipmentInventory(); EquipmentScroll.ScrollToTop(); }
             }, DispatcherPriority.Loaded);
         };
         messageTimer.Tick += (_, _) => { Vm.Message = ""; messageTimer.Stop(); };
-        Loaded += async (_, _) => { ResizeProductCards(); UpdateStockSortHeaders(); ProductSearch.Focus(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
+        Loaded += async (_, _) => { ResizeProductCards(); UpdateStockSortHeaders(); ProductSearch.Focus(); if (Vm.Page == "Equipamentos") RefreshEquipmentInventory(); if (checkUpdatesOnStartup) await UpdatesConfigurationPanel.CheckOnStartupAsync(); };
         Closed += (_, _) => UpdatesConfigurationPanel.CloseOperations();
         Closing += Window_Closing;
     }
@@ -107,7 +108,12 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.F2) { Vm.Page = "PDV"; ProductSearch.Focus(); ProductSearch.SelectAll(); e.Handled = true; }
         else if (e.Key == Key.F4) { Checkout_Click(sender, e); e.Handled = true; }
-        else if (e.Key == Key.F5) { Guard(Vm.Refresh, "Informações atualizadas."); e.Handled = true; }
+        else if (e.Key == Key.F5)
+        {
+            if (Vm.Page == "Equipamentos") { Vm.Refresh(); RefreshEquipment_Click(sender, e); }
+            else Guard(Vm.Refresh, "Informações atualizadas.");
+            e.Handled = true;
+        }
     }
     private void ProductSearch_KeyDown(object sender, KeyEventArgs e)
     {
@@ -441,43 +447,6 @@ public partial class MainWindow : Window
         d.Submit = f => { if (f.Value("new") != f.Value("confirm")) throw new InvalidOperationException("As senhas não conferem."); Vm.Service.ChangePassword(f.Value("old"), f.Value("new")); };
         if (d.ShowDialog() == true) Notify("Senha alterada.");
     });
-    private void NewPrinter_Click(object sender, RoutedEventArgs e) => Guard(() => PrinterForm(new()));
-    private void EditPrinter_Click(object sender, RoutedEventArgs e) => Guard(() => PrinterForm(Require(Vm.SelectedPrinter, "uma impressora")));
-    private void PrinterForm(PrinterProfile profile)
-    {
-        var printers = ReceiptPrinter.InstalledPrinters();
-        if (printers.Count == 0) throw new InvalidOperationException("Nenhuma impressora foi encontrada. Adicione a impressora nas configurações do Windows e tente novamente.");
-        var d = new FormDialog(this, "Cadastrar impressora", "Instale o driver no Windows antes de cadastrar a impressora no PDV.");
-        d.Text("name", "Nome para identificar", profile.Name); d.Choice("queue", "Impressora instalada", printers, profile.QueueName);
-        d.Choice("paper", "Formato do cupom", new[] { "58 mm", "80 mm", "A4" }, profile.Paper);
-        d.Check("default", "Usar como impressora padrão do PDV", Vm.Snapshot.Settings.DefaultPrinterId == profile.Id || Vm.Printers.Count == 0);
-        d.Submit = f => Vm.Service.SavePrinter(new() { Id = profile.Id, Name = f.Value("name"), QueueName = f.Value("queue"), Paper = f.Value("paper") }, f.Checked("default"));
-        if (d.ShowDialog() == true) Notify("Impressora cadastrada.");
-    }
-    private void DeletePrinter_Click(object sender, RoutedEventArgs e) => Guard(() => { var p = Require(Vm.SelectedPrinter, "uma impressora"); if (Confirm($"Remover {p.Name} do PDV?")) Vm.Service.DeleteDevice(p.Id, true); });
-    private void WindowsPrinters_Click(object sender, RoutedEventArgs e) => Guard(() => Process.Start(new ProcessStartInfo("ms-settings:printers") { UseShellExecute = true }));
-    private void NewScale_Click(object sender, RoutedEventArgs e) => Guard(() => ScaleForm(new()));
-    private void EditScale_Click(object sender, RoutedEventArgs e) => Guard(() => ScaleForm(Require(Vm.SelectedScale, "uma balança")));
-    private void ScaleForm(ScaleProfile profile)
-    {
-        var d = new FormDialog(this, "Cadastrar balança", "Conexão serial 8N1. Confira os parâmetros no manual do equipamento. Balanças USB precisam disponibilizar uma porta COM compatível.");
-        d.Text("name", "Nome para identificar", profile.Name);
-        d.Info("Portas detectadas: " + string.Join(", ", SerialScaleReader.Ports().DefaultIfEmpty("nenhuma")));
-        d.Text("port", "Porta serial", profile.Port); d.Choice("baud", "Velocidade (baud)", new[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 }, profile.BaudRate);
-        d.Choice("protocol", "Formato de leitura", new[] { "Texto em kg", "Inteiro em gramas" }, profile.Protocol);
-        d.Text("command", "Comando de solicitação em hexadecimal • opcional", profile.CommandHex);
-        d.Check("default", "Usar como balança padrão", Vm.Snapshot.Settings.DefaultScaleId == profile.Id || Vm.Scales.Count == 0);
-        d.Submit = f => Vm.Service.SaveScale(new() { Id = profile.Id, Name = f.Value("name"), Port = f.Value("port"), BaudRate = f.Selected<int>("baud"), Protocol = f.Value("protocol"), CommandHex = f.Value("command") }, f.Checked("default"));
-        if (d.ShowDialog() == true) Notify("Balança cadastrada. Use Testar leitura para validar a conexão.");
-    }
-    private void DeleteScale_Click(object sender, RoutedEventArgs e) => Guard(() => { var p = Require(Vm.SelectedScale, "uma balança"); if (Confirm($"Remover {p.Name} do PDV?")) Vm.Service.DeleteDevice(p.Id, false); });
-    private async void TestScale_Click(object sender, RoutedEventArgs e)
-    {
-        var button = (Button)sender; button.IsEnabled = false;
-        try { var scale = Require(Vm.SelectedScale, "uma balança"); var result = await SerialScaleReader.ReadAsync(scale); Notify($"Leitura de {scale.Name}: {result:0.000} kg."); }
-        catch (Exception ex) { Notify(ex.Message); }
-        finally { button.IsEnabled = true; }
-    }
     private void AddWeighed(Product product)
     {
         var d = new FormDialog(this, "Produto por peso", $"{product.Name} • {product.Price:C2} / kg", "Adicionar à venda");

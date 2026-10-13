@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.8.1
+# Guia do Giro Bebidas — versão 1.9.0
 
 ## Instalação e primeiro acesso
 
@@ -81,6 +81,10 @@ Em **Vendas**, consulte detalhes, reimprima o cupom ou exporte CSV. O administra
 Em **Relatórios**, escolha o período e consulte receita dos produtos, custos históricos, lucro e margem bruta. O desconto é distribuído entre os produtos; canceladas ficam fora do resultado. A entrega e as despesas operacionais não entram no lucro bruto dos produtos.
 
 ## Impressoras e balanças
+
+Os cartões **Impressoras** e **Balanças** reúnem cadastros, edição, remoção e o equipamento padrão. Selecione uma linha para usar os botões do cabeçalho ou abra o menu de três pontos da própria linha. **Definir como padrão** afeta o PDV; a impressora fiscal mantém sua seleção separada. A remoção exige confirmação e remove somente o cadastro no programa, preservando drivers e configurações do Windows.
+
+Use **Atualizar disponibilidade** para conferir filas de impressão e portas seriais detectadas no Windows. Esses indicadores não confirmam uma conexão física. **Testar impressão** envia uma página não fiscal para a impressora da linha escolhida, sem trocar o padrão. **Testar leitura** mostra o peso recebido e registra a indicação de leitura confirmada nesta sessão; após falha, confira a conexão e tente novamente.
 
 Em **Equipamentos → Adicionar impressora**, escolha uma impressora já instalada no Windows, dê um nome e escolha o papel: 58 mm, 80 mm ou A4. Marque como padrão. Ajuste também o tamanho do papel no driver da impressora. Em **Configurações**, ative a impressão automática se quiser. É possível escolher uma impressora PDF do Windows para salvar um cupom.
 

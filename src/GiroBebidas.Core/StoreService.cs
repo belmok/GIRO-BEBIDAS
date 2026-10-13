@@ -447,8 +447,17 @@ public sealed partial class StoreService(JsonStore store)
         Store.Update(s =>
         {
             var actor = Actor(s, true);
-            if (printer) { s.Printers.RemoveAll(p => p.Id == id); if (s.Settings.DefaultPrinterId == id) s.Settings.DefaultPrinterId = null; if (s.Fiscal.Options.PrinterId == id) s.Fiscal.Options.PrinterId = null; }
-            else { s.Scales.RemoveAll(p => p.Id == id); if (s.Settings.DefaultScaleId == id) s.Settings.DefaultScaleId = null; }
+            if (printer)
+            {
+                if (s.Printers.RemoveAll(p => p.Id == id) == 0) throw new InvalidOperationException("Impressora não encontrada.");
+                if (s.Settings.DefaultPrinterId == id) s.Settings.DefaultPrinterId = null;
+                if (s.Fiscal.Options.PrinterId == id) s.Fiscal.Options.PrinterId = null;
+            }
+            else
+            {
+                if (s.Scales.RemoveAll(p => p.Id == id) == 0) throw new InvalidOperationException("Balança não encontrada.");
+                if (s.Settings.DefaultScaleId == id) s.Settings.DefaultScaleId = null;
+            }
             Log(s, actor, "Equipamento removido"); return 0;
         });
     }

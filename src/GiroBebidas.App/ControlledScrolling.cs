@@ -42,7 +42,7 @@ public static class ControlledScrolling
         if (e.OriginalSource is Visual wheelSource)
         {
             for (DependencyObject? parent = wheelSource; parent is not null && !ReferenceEquals(parent, area); parent = VisualTreeHelper.GetParent(parent))
-                if (parent is FrameworkElement nested && GetIsEnabled(nested)) return;
+                if (parent is FrameworkElement nested && GetIsEnabled(nested) && GetScrollViewer(nested)?.ScrollableHeight > 0) return;
         }
         if (GetScrollViewer(area) is null) return;
         if (SystemParameters.WheelScrollLines != 0) ScrollArea(area, e.Delta);

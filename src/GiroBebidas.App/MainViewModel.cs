@@ -5,7 +5,7 @@ using GiroBebidas.Core;
 namespace GiroBebidas.App;
 
 public record CustomerChoice(Guid? Id, string Name);
-public sealed class MainViewModel : Observable
+public sealed partial class MainViewModel : Observable
 {
     public StoreService Service { get; }
     public ObservableCollection<CartLine> Cart { get; } = [];
@@ -297,10 +297,11 @@ public sealed class MainViewModel : Observable
         StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
         RecentStockMovements = StockMovements.Take(5).Select(m => new StockMovementRow(m)).ToList(); Changed(nameof(RecentStockMovements));
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;
+        BuildEquipmentRows();
         var open = Snapshot.CashSessions.FirstOrDefault(c => c.ClosedAt is null);
         CashSummary = open is null ? null : StoreService.SummarizeCash(Snapshot, open.Id);
         FilterProducts(); FilterStock(); FilterClients(); FilterOrders(); BuildReport(); if (Page == "Fiscal" && IsAdmin) BuildFiscalChecks();
-        foreach (string property in new[] { nameof(Snapshot), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
+        foreach (string property in new[] { nameof(Snapshot), nameof(IsAdmin), nameof(OperatorName), nameof(OperatorRole), nameof(OperatorInitial), nameof(StoreName), nameof(CustomerOptions), nameof(Orders), nameof(Sales), nameof(Users), nameof(StockMovements), nameof(AuditEntries), nameof(Printers), nameof(Scales), nameof(CashSummary), nameof(CashIsOpen), nameof(CashCanOpen), nameof(CashActionLabel), nameof(CashStatus), nameof(CashOpenedLabel), nameof(PrinterDefaultLabel), nameof(ScaleDefaultLabel), nameof(TodayTotal), nameof(TodayCount), nameof(TodayProfit), nameof(TotalDebt), nameof(LowStockCount), nameof(OpenOrderCount), nameof(FiscalIssuerLabel), nameof(FiscalEnvironmentLabel), nameof(FiscalNumberLabel), nameof(FiscalCertificateLabel), nameof(FiscalCscLabel), nameof(FiscalPrinterLabel) }) Changed(property);
         CartChanged();
     }
 }

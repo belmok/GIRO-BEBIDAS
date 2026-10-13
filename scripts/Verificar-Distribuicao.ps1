@@ -11,7 +11,7 @@ $taskInstalled = Join-Path $taskOutput 'instalacao-teste'
 $taskData = Join-Path $taskOutput 'dados-teste'
 [System.IO.Directory]::CreateDirectory($taskScreens) | Out-Null
 $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $taskRoot 'artifacts\runtime-cache'
-function Invoke-GiroCheck([string]$TaskExecutable, [string[]]$TaskArguments) {
+function Invoke-GiroCheck([string]$TaskExecutable, [string[]]$TaskArguments, [int]$TaskTimeoutMs = 45000) {
     $taskStart = [System.Diagnostics.ProcessStartInfo]::new()
     $taskStart.FileName = $TaskExecutable
     $taskStart.UseShellExecute = $false
@@ -19,7 +19,7 @@ function Invoke-GiroCheck([string]$TaskExecutable, [string[]]$TaskArguments) {
     $taskStart.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
     foreach ($taskArgument in $TaskArguments) { $taskStart.ArgumentList.Add($taskArgument) }
     $taskProcess = [System.Diagnostics.Process]::Start($taskStart)
-    if (-not $taskProcess.WaitForExit(45000)) { $taskProcess.Kill($true); throw 'A verificação excedeu o tempo esperado.' }
+    if (-not $taskProcess.WaitForExit($TaskTimeoutMs)) { $taskProcess.Kill($true); throw 'A verificação excedeu o tempo esperado.' }
     if ($taskProcess.ExitCode -ne 0) {
         $taskSmokeError = Join-Path $taskData 'smoke-error.txt'
         if ([IO.File]::Exists($taskSmokeError)) { Write-Output ([IO.File]::ReadAllText($taskSmokeError)) }
@@ -36,7 +36,7 @@ Write-Output 'OK: pacote extraído em pasta isolada, sem registro ou atalhos no 
 $taskSourceHash = (Get-FileHash -LiteralPath (Join-Path $taskRelease 'GiroBebidas.exe') -Algorithm SHA256).Hash
 $taskInstalledHash = (Get-FileHash -LiteralPath (Join-Path $taskInstalled 'GiroBebidas.exe') -Algorithm SHA256).Hash
 if ($taskSourceHash -ne $taskInstalledHash) { throw 'Executável extraído não confere com a distribuição.' }
-Invoke-GiroCheck -TaskExecutable (Join-Path $taskInstalled 'GiroBebidas.exe') -TaskArguments @('--ui-smoke', '--data-dir', $taskData, '--output', $taskScreens)
+Invoke-GiroCheck -TaskExecutable (Join-Path $taskInstalled 'GiroBebidas.exe') -TaskArguments @('--ui-smoke', '--data-dir', $taskData, '--output', $taskScreens) -TaskTimeoutMs 90000
 if (-not (Test-Path -LiteralPath (Join-Path $taskScreens 'smoke-ok.txt'))) { throw 'Verificação visual incompleta.' }
 foreach ($taskFiscalImage in @('16-configuracao-fiscal.png', '17-empresa-emitente.png', '18-parametros-nfce.png', '19-dados-fiscais-produto.png', '20-conferencia-fiscal.png')) {
     if (-not (Test-Path -LiteralPath (Join-Path $taskScreens $taskFiscalImage))) { throw 'A verificação visual fiscal ficou incompleta.' }

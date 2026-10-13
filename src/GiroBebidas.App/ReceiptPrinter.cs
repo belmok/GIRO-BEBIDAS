@@ -18,6 +18,12 @@ public static class ReceiptPrinter
     public static void PrintSale(Window owner, StoreState state, Sale sale, bool dialog = true) => Print(owner, state, ReceiptText.Sale(state.Settings, sale), $"Venda {sale.NumberLabel}", dialog);
     public static void PrintOrder(Window owner, StoreState state, Order order) => Print(owner, state, ReceiptText.Order(state.Settings, order), $"Pedido {order.NumberLabel}", true);
     public static void PrintCash(Window owner, StoreState state, CashSession cash) => Print(owner, state, ReceiptText.Cash(state, cash), "Resumo do caixa", true);
+    internal static string PrinterTestText(PrinterProfile profile) => $"GIRO BEBIDAS\nTESTE DE IMPRESSÃO\n\nImpressora: {profile.Name}\nFila: {profile.QueueName}\nPapel: {profile.Paper}\n{DateTime.Now:dd/MM/yyyy HH:mm}\n\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789 • R$ 123,45\n\nComprovante de teste não fiscal.";
+    public static void PrintTest(Window owner, PrinterProfile profile)
+    {
+        var state = new StoreState { Printers = [profile], Settings = new StoreSettings { DefaultPrinterId = profile.Id } };
+        Print(owner, state, PrinterTestText(profile), "Teste da impressora", false);
+    }
     private static void Print(Window owner, StoreState state, string text, string title, bool showDialog)
     {
         var profile = state.Printers.FirstOrDefault(p => p.Id == state.Settings.DefaultPrinterId);

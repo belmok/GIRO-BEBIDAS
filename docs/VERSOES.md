@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.9.0 — 12/10/2026
+
+Impressoras e balanças redesenhadas com cartões, tabelas, indicadores, estados vazios e menus de ações por linha. Definir padrão, testar, editar e remover usam o equipamento escolhido, preservando a configuração fiscal e os demais dados do depósito. Disponibilidade reflete filas e portas detectadas; leitura confirmada refere-se ao último teste realizado nesta sessão.
+
+Teste de impressão usa a fila e o papel da impressora selecionada sem trocar o padrão. Leitura de balança bloqueia operações simultâneas e recupera os botões após falha ou sucesso. Remoção exige confirmação e não remove drivers do Windows; IDs desconhecidos são recusados sem gravação.
+
+367 verificações de negócio e 47 de notas/publicação aprovadas. Interface nativa, menus, seleção, cadastro, cancelamento, padrões, estados vazios e rolagem conferidos em dados isolados, inclusive na janela menor. Testes de impressão e leitura realizados em software; equipamentos físicos não foram testados. Aplicativo empacotado, instalação e remoção conferidos antes da publicação.
+
 ## 1.8.1 — 12/10/2026
 
 Configurações gerais e configuração fiscal separadas. Os dados do depósito, backup e auditoria ficam somente em Configurações. O menu Cupom fiscal abre a página própria com seis cartões para emitente, ambiente e numeração, A1, CSC, impressora e tributos; a conferência das pendências fica abaixo dos cadastros.
