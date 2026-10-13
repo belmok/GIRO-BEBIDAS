@@ -106,6 +106,10 @@ public static partial class SmokeRunner
             CheckEquipmentUi(output);
             CheckNavigationUi(output);
             CheckSalesUi(output);
+            CheckCustomersDashboard(output);
+            CheckUsersDashboard(window, vm, output);
+            CheckReportDashboard(window, vm, output);
+            CheckSalesCalendarUi(output);
             CheckCashDetails(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);
@@ -866,6 +870,13 @@ public static partial class SmokeRunner
     }
     private static void OpenCashMenu(MainWindow window, bool open, bool admin)
     {
+        // Native menus require an active owner. Offscreen capture deliberately uses
+        // ShowActivated=false; establish focus before Invoke so desktop focus loss
+        // cannot dismiss the popup as it enters MenuBase's native menu mode.
+        if (!window.IsActive && !window.Activate()) throw new InvalidOperationException("A janela de teste precisa adquirir o foco nativo antes de conferir o menu do caixa.");
+        window.CashStatusButton.Focus(); FlushLayout(window);
+        if (!window.IsActive || !window.CashStatusButton.IsKeyboardFocused)
+            throw new InvalidOperationException("O menu deve ser conferido com a janela ativa e o botão realmente focalizado.");
         ((IInvokeProvider)new ButtonAutomationPeer(window.CashStatusButton).GetPattern(PatternInterface.Invoke)).Invoke();
         FlushLayout(window); window.CashStatusMenu.UpdateLayout();
         AssertCashMenu(window, open, admin);
@@ -919,11 +930,15 @@ public static partial class SmokeRunner
             _ => null
         };
         string background = open ? "#E9F5EB" : "#FFF4F1", ink = open ? "#187B52" : "#B4483E", borderColor = open ? "#D4EAD9" : "#F0D5CF";
+        // Keyboard focus and hover have their own accessible outlines in the real
+        // template; they retain the open/closed color while emphasizing the button.
+        if (window.CashStatusButton.IsKeyboardFocused) borderColor = ink;
+        else if (window.CashStatusButton.IsMouseOver) borderColor = open ? "#91BDA1" : "#D8998C";
         static bool Matches(Brush? brush, string hex) => brush is SolidColorBrush solid && solid.Color == (Color)ColorConverter.ConvertFromString(hex);
         if (window.Vm.CashIsOpen != open || window.CashStatusLabel.Text != (open ? "Caixa aberto" : "Caixa fechado") ||
             !Matches(window.CashStatusBadge.Background, background) || !Matches(window.CashStatusBadge.BorderBrush, borderColor) ||
             !Matches(window.CashStatusLabel.Foreground, ink) || !Matches(dotBrush, ink))
-            throw new InvalidOperationException("O indicador de caixa precisa ficar verde ao abrir e vermelho ao fechar, incluindo fundo, borda, texto e ponto.");
+            throw new InvalidOperationException($"O indicador de caixa precisa ficar verde ao abrir e vermelho ao fechar, incluindo fundo, borda, texto e ponto. Aberto={window.Vm.CashIsOpen}; texto={window.CashStatusLabel.Text}; fundo={window.CashStatusBadge.Background}; borda={window.CashStatusBadge.BorderBrush} (esperada={borderColor}); foco={window.CashStatusButton.IsKeyboardFocused}; hover={window.CashStatusButton.IsMouseOver}.");
     }
     private static KeyEventArgs KeyEvent(Window window, Key key, RoutedEvent routedEvent)
         => new(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window) ?? throw new InvalidOperationException("A janela de QA precisa estar renderizada."), Environment.TickCount, key) { RoutedEvent = routedEvent };

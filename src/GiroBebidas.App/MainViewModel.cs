@@ -107,7 +107,12 @@ public sealed partial class MainViewModel : Observable
     public decimal ReportProfit => ProfitRows.Sum(r => r.Profit);
     public string ReportMargin => ReportRevenue == 0 ? "0%" : (ReportProfit / ReportRevenue).ToString("P1");
     public StockRow? SelectedStock { get; set; }
-    public CustomerRow? SelectedCustomer { get; set; }
+    private CustomerRow? selectedCustomer;
+    public CustomerRow? SelectedCustomer { get => selectedCustomer; set { if (Set(ref selectedCustomer, value)) { Changed(nameof(CustomerHasSelection)); Changed(nameof(CustomerCanReceive)); } } }
+    public bool CustomerHasSelection => SelectedCustomer is not null;
+    public bool CustomerCanReceive => SelectedCustomer?.HasDebt == true && CashIsOpen;
+    public string CustomerCountLabel => $"{CustomerRows.Count} cliente{(CustomerRows.Count == 1 ? " encontrado" : "s encontrados")}";
+    public string CustomerEmptyVisibility => CustomerRows.Count == 0 ? "Visible" : "Collapsed";
     private Order? selectedOrder;
     public Order? SelectedOrder
     {
@@ -193,6 +198,7 @@ public sealed partial class MainViewModel : Observable
         OrderPreviousPageCommand = new RelayCommand(_ => { if (OrderCanPrevious) OrderPageNumber--; }, _ => OrderCanPrevious);
         OrderNextPageCommand = new RelayCommand(_ => { if (OrderCanNext) OrderPageNumber++; }, _ => OrderCanNext);
         InitializeSalesHistory();
+        InitializeReportDashboard();
         Refresh();
     }
     public void AddProduct(Product p, decimal quantity)
@@ -250,7 +256,15 @@ public sealed partial class MainViewModel : Observable
         SelectedStock = StockRows.FirstOrDefault(r => r.Product.Id == selected); Changed(nameof(SelectedStock));
         Changed(nameof(StockCount)); Changed(nameof(StockEmptyVisibility));
     }
-    private void FilterClients() { CustomerRows = Snapshot.Customers.Where(c => Matches(ClientSearch.Trim(), c.Name, c.Phone, c.Document)).OrderBy(c => c.Name).Select(c => new CustomerRow(c, StoreService.Balance(Snapshot, c.Id))).ToList(); Changed(nameof(CustomerRows)); }
+    private void FilterClients()
+    {
+        Guid? selectedId = SelectedCustomer?.Customer.Id;
+        CustomerRows = Snapshot.Customers.Where(c => Matches(ClientSearch.Trim(), c.Name, c.Phone, c.Document, c.Address))
+            .OrderBy(c => c.Name).Select(c => new CustomerRow(c, StoreService.Balance(Snapshot, c.Id), IsAdmin && StoreService.CanDeleteCustomer(Snapshot, c.Id))).ToList();
+        Changed(nameof(CustomerRows));
+        SelectedCustomer = CustomerRows.FirstOrDefault(c => c.Customer.Id == selectedId);
+        foreach (string property in new[] { nameof(CustomerCountLabel), nameof(CustomerEmptyVisibility), nameof(CustomerCanReceive) }) Changed(property);
+    }
     private void FilterOrders(bool resetPage = false)
     {
         Guid? selectedId = SelectedOrder?.Id;
@@ -283,12 +297,7 @@ public sealed partial class MainViewModel : Observable
         SelectedCash = CashSessions.FirstOrDefault(c => c.Id == selectedId);
         Changed(nameof(CashHistoryEmptyVisibility)); Changed(nameof(CashMovementsEmptyVisibility));
     }
-    private void BuildReport()
-    {
-        DateTimeOffset? from = ReportPeriod switch { "Hoje" => new DateTimeOffset(DateTime.Today), "Últimos 7 dias" => new DateTimeOffset(DateTime.Today.AddDays(-6)), "Últimos 30 dias" => new DateTimeOffset(DateTime.Today.AddDays(-29)), _ => null };
-        ProfitRows = StoreService.ProfitReport(Snapshot, from);
-        foreach (string property in new[] { nameof(ProfitRows), nameof(ReportRevenue), nameof(ReportCost), nameof(ReportProfit), nameof(ReportMargin) }) Changed(property);
-    }
+    private void BuildReport() => RefreshReportDashboard();
     public void BuildFiscalChecks() { FiscalChecks = Service.CheckFiscalConfiguration(); Changed(nameof(FiscalChecks)); }
     public void Refresh()
     {
@@ -300,7 +309,7 @@ public sealed partial class MainViewModel : Observable
         CustomerOptions = [new(null, "Consumidor final"), .. Snapshot.Customers.OrderBy(c => c.Name).Select(c => new CustomerChoice(c.Id, c.Name))];
         CartCustomer = CustomerOptions.FirstOrDefault(c => c.Id == customerId) ?? CustomerOptions[0];
         Orders = Snapshot.Orders.OrderByDescending(o => o.Date).ToList(); Sales = Snapshot.Sales.OrderByDescending(v => v.Date).ToList(); RefreshSalesHistory();
-        Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); FilterCash();
+        Users = Snapshot.Users.OrderBy(u => u.Username).ToList(); RebuildUsers(); FilterCash();
         StockMovements = Snapshot.StockMovements.OrderByDescending(m => m.Date).Take(250).ToList();
         RecentStockMovements = StockMovements.Take(5).Select(m => new StockMovementRow(m)).ToList(); Changed(nameof(RecentStockMovements));
         AuditEntries = Snapshot.Audit.OrderByDescending(a => a.Date).Take(300).ToList(); Printers = Snapshot.Printers; Scales = Snapshot.Scales;

@@ -277,16 +277,8 @@ public partial class MainWindow : Window
         d.Submit = f => { decimal quantity = f.Decimal("qty"); if (quantity <= 0) throw new InvalidOperationException("Informe uma quantidade maior que zero."); Vm.Service.AdjustStock(p.Id, quantity * (f.Value("type") == "Saída / perda" ? -1 : 1), f.Value("reason"), f.Decimal("cost")); };
         if (d.ShowDialog() == true) Notify("Estoque atualizado.");
     });
-    private void NewCustomer_Click(object sender, RoutedEventArgs e) => Guard(() => CustomerForm(new()));
-    private void EditCustomer_Click(object sender, RoutedEventArgs e) => Guard(() => CustomerForm(Require(Vm.SelectedCustomer, "um cliente").Customer));
-    private void CustomerForm(Customer c)
-    {
-        var d = new FormDialog(this, "Cadastro de cliente", "Os dados de entrega poderão ser usados nos pedidos e cupons.");
-        d.Text("name", "Nome", c.Name); d.Text("phone", "Telefone", c.Phone); d.Text("doc", "CPF / CNPJ", c.Document); d.Text("address", "Endereço de entrega", c.Address);
-        d.Number("limit", "Limite de fiado (R$)", c.CreditLimit); d.Text("notes", "Observações", c.Notes, true);
-        d.Submit = f => Vm.Service.SaveCustomer(new() { Id = c.Id, Name = f.Value("name"), Phone = f.Value("phone"), Document = f.Value("doc"), Address = f.Value("address"), CreditLimit = f.Decimal("limit"), Notes = f.Value("notes") });
-        if (d.ShowDialog() == true) Notify("Cliente salvo.");
-    }
+    private void NewCustomer_Click(object sender, RoutedEventArgs e) => CustomerNew(sender, e);
+    private void EditCustomer_Click(object sender, RoutedEventArgs e) => CustomerEdit(sender, e);
     private void Checkout_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         CommitCartAmounts();
@@ -427,20 +419,9 @@ public partial class MainWindow : Window
         foreach (var payment in state.ReceivablePayments.Where(p => sales.Any(v => v.Id == p.SaleId)).OrderByDescending(p => p.Date)) d.Info($"Recebido em {payment.Date:dd/MM HH:mm}: {payment.Amount:C2} • {Labels.Payment(payment.Method)}");
         d.ShowDialog();
     });
-    private void NewUser_Click(object sender, RoutedEventArgs e) => Guard(() => UserForm(new() { Role = UserRole.Operador }, false));
-    private void EditUser_Click(object sender, RoutedEventArgs e) => Guard(() => UserForm(Require(Vm.SelectedUser, "um usuário"), true));
-    private void UserForm(UserAccount user, bool editing)
-    {
-        var d = new FormDialog(this, editing ? "Editar usuário" : "Criar usuário", "Use uma conta individual para cada pessoa.");
-        d.Text("name", "Nome", user.Name); d.Text("username", "Usuário", user.Username); d.Choice("role", "Perfil", Enum.GetValues<UserRole>(), user.Role);
-        d.Password("password", editing ? "Nova senha • deixe vazio para manter" : "Senha (mínimo de 4 caracteres)"); d.Password("confirm", "Confirmar senha"); d.Check("active", "Usuário ativo", user.Active);
-        d.Submit = f =>
-        {
-            if (f.Value("password") != f.Value("confirm")) throw new InvalidOperationException("As senhas não conferem.");
-            Vm.Service.SaveUser(new() { Id = user.Id, Name = f.Value("name"), Username = f.Value("username"), Role = f.Selected<UserRole>("role"), Active = f.Checked("active") }, f.Value("password"));
-        };
-        if (d.ShowDialog() == true) { Notify("Usuário salvo."); if (editing && user.Id == Vm.Service.CurrentUserId) { ReturnToLogin = true; Close(); } }
-    }
+    private void NewUser_Click(object sender, RoutedEventArgs e) => UserForm(new() { Role = UserRole.Operador }, false);
+    private void EditUser_Click(object sender, RoutedEventArgs e) { try { UserForm(Require(Vm.SelectedUser, "um usuário"), true); } catch (Exception ex) { Notify(ex.Message); } }
+    private void UserForm(UserAccount user, bool editing) => ShowUserEditor(user, editing);
     private void ChangePassword_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {
         var d = new FormDialog(this, "Alterar minha senha", "Informe a senha atual e escolha a nova senha.");
@@ -487,8 +468,6 @@ public partial class MainWindow : Window
         if (file.ShowDialog(this) != true) return;
         File.WriteAllLines(file.FileName, rows.Select(r => string.Join(";", r.Select(Csv))), new UTF8Encoding(true)); Notify("Relatório exportado.");
     }
-    private void ExportProfit_Click(object sender, RoutedEventArgs e) => Guard(() => ExportCsv($"lucratividade-{DateTime.Today:yyyyMMdd}.csv",
-        new[] { new[] { "Produto", "Quantidade", "Receita líquida", "Custo", "Lucro bruto", "Margem" } }.Concat(Vm.ProfitRows.Select(v => new[] { v.Name, v.Quantity.ToString("0.###"), v.Revenue.ToString("0.00"), v.Cost.ToString("0.00"), v.Profit.ToString("0.00"), v.Margin.ToString("P2") }))));
     private void SaveSettings_Click(object sender, RoutedEventArgs e) => Guard(() => Vm.Service.SaveSettings(Vm.Snapshot.Settings), "Configurações salvas.");
     private void Backup_Click(object sender, RoutedEventArgs e) => Guard(() =>
     {

@@ -1,0 +1,140 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Style x:Key="SalesCalendarNavigationButton" TargetType="Button">
+  <Setter Property="Height" Value="34"/><Setter Property="MinWidth" Value="34"/>
+  <Setter Property="Padding" Value="7,3"/><Setter Property="Background" Value="Transparent"/>
+  <Setter Property="BorderBrush" Value="#DAE7DE"/><Setter Property="BorderThickness" Value="1"/>
+  <Setter Property="Foreground" Value="#244538"/><Setter Property="Cursor" Value="Hand"/>
+  <Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+   <Border x:Name="CalendarNavigationBody" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CalendarNavigationBody" Property="Background" Value="#E1F2E7"/></Trigger>
+    <Trigger Property="IsPressed" Value="True"><Setter TargetName="CalendarNavigationBody" Property="Background" Value="#CBE7D5"/></Trigger>
+    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="CalendarNavigationBody" Property="BorderBrush" Value="#187B52"/></Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="CalendarNavigationBody" Property="Opacity" Value="0.35"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesCalendarDayButton" TargetType="CalendarDayButton">
+  <Setter Property="Width" Value="34"/><Setter Property="Height" Value="34"/><Setter Property="Margin" Value="2"/>
+  <Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="#243D31"/>
+  <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+  <Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CalendarDayButton">
+   <Border x:Name="CalendarDayBody" CornerRadius="7" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsInactive" Value="True"><Setter Property="Foreground" Value="#88988F"/></Trigger>
+    <Trigger Property="IsToday" Value="True"><Setter Property="BorderBrush" Value="#91BCA2"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+    <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#EDF6F0"/></Trigger>
+    <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#187B52"/></Trigger>
+    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#187B52"/><Setter Property="BorderBrush" Value="#187B52"/><Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+    <Trigger Property="IsBlackedOut" Value="True"><Setter Property="Opacity" Value="0.3"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.3"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesCalendarPeriodButton" TargetType="CalendarButton">
+  <Setter Property="Height" Value="47"/><Setter Property="MinWidth" Value="60"/><Setter Property="Margin" Value="3"/>
+  <Setter Property="FontSize" Value="13"/><Setter Property="Foreground" Value="#243D31"/>
+  <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+  <Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CalendarButton">
+   <Border x:Name="CalendarPeriodBody" CornerRadius="7" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsInactive" Value="True"><Setter Property="Foreground" Value="#88988F"/></Trigger>
+    <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#EDF6F0"/></Trigger>
+    <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#187B52"/></Trigger>
+    <Trigger Property="HasSelectedDays" Value="True"><Setter Property="Background" Value="#187B52"/><Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.3"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesCalendarItem" TargetType="CalendarItem">
+  <Setter Property="Margin" Value="0"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CalendarItem">
+   <ControlTemplate.Resources><DataTemplate x:Key="{x:Static CalendarItem.DayTitleTemplateResourceKey}"><TextBlock Text="{Binding}" TextAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="#365648" Margin="0,8,0,6"/></DataTemplate></ControlTemplate.Resources>
+   <Grid x:Name="PART_Root" Width="282">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Border Background="#F0F7F2" CornerRadius="8" Padding="7" Margin="0,0,0,4">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+      <Button x:Name="PART_PreviousButton" Style="{StaticResource SalesCalendarNavigationButton}" AutomationProperties.Name="Período anterior"><Path Data="M 8,2 L 2,8 L 8,14" Stroke="#244538" StrokeThickness="1.8" Width="8" Height="14" Stretch="Uniform"/></Button>
+      <Button x:Name="PART_HeaderButton" Grid.Column="1" Style="{StaticResource SalesCalendarNavigationButton}" BorderThickness="0" Margin="5,0" AutomationProperties.Name="Escolher mês ou ano"/>
+      <Button x:Name="PART_NextButton" Grid.Column="2" Style="{StaticResource SalesCalendarNavigationButton}" AutomationProperties.Name="Próximo período"><Path Data="M 2,2 L 8,8 L 2,14" Stroke="#244538" StrokeThickness="1.8" Width="8" Height="14" Stretch="Uniform"/></Button>
+     </Grid>
+    </Border>
+    <Grid x:Name="PART_MonthView" Grid.Row="1" HorizontalAlignment="Center">
+     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+     <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+    </Grid>
+    <Grid x:Name="PART_YearView" Grid.Row="1" HorizontalAlignment="Center" Visibility="Hidden">
+     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+     <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+    </Grid>
+    <Border x:Name="PART_DisabledVisual" Grid.RowSpan="2" Visibility="Collapsed" Background="#AFFFFFFF" IsHitTestVisible="False"/>
+   </Grid>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="PART_DisabledVisual" Property="Visibility" Value="Visible"/></Trigger>
+    <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource AncestorType=Calendar}}" Value="Year"><Setter TargetName="PART_MonthView" Property="Visibility" Value="Hidden"/><Setter TargetName="PART_YearView" Property="Visibility" Value="Visible"/></DataTrigger>
+    <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource AncestorType=Calendar}}" Value="Decade"><Setter TargetName="PART_MonthView" Property="Visibility" Value="Hidden"/><Setter TargetName="PART_YearView" Property="Visibility" Value="Visible"/></DataTrigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesCalendar" TargetType="Calendar">
+  <Setter Property="Language" Value="pt-BR"/><Setter Property="FirstDayOfWeek" Value="Sunday"/>
+  <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D9E4DD"/><Setter Property="BorderThickness" Value="1"/>
+  <Setter Property="CalendarItemStyle" Value="{StaticResource SalesCalendarItem}"/>
+  <Setter Property="CalendarDayButtonStyle" Value="{StaticResource SalesCalendarDayButton}"/>
+  <Setter Property="CalendarButtonStyle" Value="{StaticResource SalesCalendarPeriodButton}"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Calendar">
+   <Grid x:Name="PART_Root" Margin="6,4,9,12">
+    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="10">
+     <Border.Effect><DropShadowEffect Color="#143826" BlurRadius="14" ShadowDepth="3" Opacity="0.14"/></Border.Effect>
+     <CalendarItem x:Name="PART_CalendarItem" Style="{TemplateBinding CalendarItemStyle}" Background="{TemplateBinding Background}" BorderThickness="0"/>
+    </Border>
+   </Grid>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesDatePickerTextBox" TargetType="DatePickerTextBox">
+  <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+  <Setter Property="Padding" Value="12,0,5,0"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+  <Setter Property="Foreground" Value="#243D31"/><Setter Property="SelectionBrush" Value="#BCE4CB"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DatePickerTextBox">
+   <Grid>
+    <VisualStateManager.VisualStateGroups><VisualStateGroup x:Name="WatermarkStates"><VisualState x:Name="Unwatermarked"/><VisualState x:Name="Watermarked"><Storyboard><DoubleAnimation Storyboard.TargetName="PART_Watermark" Storyboard.TargetProperty="Opacity" To="1" Duration="0"/></Storyboard></VisualState></VisualStateGroup></VisualStateManager.VisualStateGroups>
+    <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+    <ContentControl x:Name="PART_Watermark" Opacity="0" IsHitTestVisible="False" IsTabStop="False" Margin="{TemplateBinding Padding}" VerticalAlignment="Center">
+     <ContentControl.Template><ControlTemplate TargetType="ContentControl"><TextBlock Text="Selecione uma data" Foreground="#778B80" FontSize="12" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/></ControlTemplate></ContentControl.Template>
+    </ContentControl>
+   </Grid>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+ <Style x:Key="SalesDatePickerStyle" TargetType="DatePicker">
+  <Setter Property="Language" Value="pt-BR"/><Setter Property="SelectedDateFormat" Value="Short"/><Setter Property="FirstDayOfWeek" Value="Sunday"/>
+  <Setter Property="CalendarStyle" Value="{StaticResource SalesCalendar}"/><Setter Property="MinHeight" Value="46"/>
+  <Setter Property="Foreground" Value="#243D31"/><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D9E4DD"/>
+  <Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="0"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DatePicker">
+   <Border x:Name="SalesDateInputBorder" CornerRadius="9" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+    <Grid x:Name="PART_Root"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="37"/></Grid.ColumnDefinitions>
+     <DatePickerTextBox x:Name="PART_TextBox" Style="{StaticResource SalesDatePickerTextBox}" FontSize="{TemplateBinding FontSize}" Foreground="{TemplateBinding Foreground}" AutomationProperties.Name="{Binding (AutomationProperties.Name), RelativeSource={RelativeSource TemplatedParent}}"/>
+     <Button x:Name="PART_Button" Grid.Column="1" Focusable="False" IsTabStop="False" Margin="2,5,4,5" Style="{StaticResource SalesCalendarNavigationButton}" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Abrir calendário">
+      <Path Data="M 3,5 L 21,5 L 21,21 L 3,21 Z M 3,10 L 21,10 M 7,2 L 7,7 M 17,2 L 17,7" Stroke="#36604B" StrokeThickness="1.8" Width="19" Height="20" Stretch="Uniform"/>
+     </Button>
+     <Popup x:Name="PART_Popup" Placement="Bottom" PlacementTarget="{Binding ElementName=PART_Root}" StaysOpen="False" AllowsTransparency="True"/>
+    </Grid>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="SalesDateInputBorder" Property="BorderBrush" Value="#187B52"/></Trigger>
+    <Trigger Property="IsDropDownOpen" Value="True"><Setter TargetName="SalesDateInputBorder" Property="BorderBrush" Value="#187B52"/></Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="SalesDateInputBorder" Property="Opacity" Value="0.4"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+</ResourceDictionary>

@@ -3,6 +3,7 @@
  <ResourceDictionary>
   <ResourceDictionary.MergedDictionaries>
    <ResourceDictionary Source="Styles/Controls.xaml"/>
+   <ResourceDictionary Source="Styles/SalesCalendar.xaml"/>
   </ResourceDictionary.MergedDictionaries>
   <SolidColorBrush x:Key="Ink" Color="#172B29"/><SolidColorBrush x:Key="Muted" Color="#778681"/>
   <SolidColorBrush x:Key="Green" Color="#187B52"/><SolidColorBrush x:Key="Border" Color="#E3E9E5"/>

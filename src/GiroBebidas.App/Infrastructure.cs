@@ -76,10 +76,16 @@ public sealed class CartLine(Product product, decimal quantity, decimal? fixedPr
     public string QuantityLabel => $"{Quantity:0.###}";
     public string PriceLabel => $"{UnitPrice:C2} / {Product.Unit}" + (fixedPrice is null && UnitPrice != Product.Price ? " • atacado" : "");
 }
-public record CustomerRow(Customer Customer, decimal Balance)
+public record CustomerRow(Customer Customer, decimal Balance, bool CanDelete = false)
 {
     public string Name => Customer.Name; public string Phone => Customer.Phone; public string Address => Customer.Address;
     public decimal Limit => Customer.CreditLimit; public string Document => Customer.Document;
+    public string Initials => string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => n[..1])).ToUpperInvariant();
+    public string Status => Customer.CreditBlocked ? "Fiado bloqueado" : Balance > 0 ? "Saldo em aberto" : "Em dia";
+    public string StatusBackground => Customer.CreditBlocked ? "#FDEBE9" : Balance > 0 ? "#FFF2D9" : "#E3F4E8";
+    public string StatusForeground => Customer.CreditBlocked ? "#B83B30" : Balance > 0 ? "#97641E" : "#187B52";
+    public string CreditActionLabel => Customer.CreditBlocked ? "Liberar fiado" : "Bloquear fiado";
+    public bool HasDebt => Balance > 0;
 }
 public record StockRow(Product Product, decimal Reserved, bool CanDelete = false)
 {

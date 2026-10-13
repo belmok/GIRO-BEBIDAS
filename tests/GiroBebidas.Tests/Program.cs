@@ -226,6 +226,7 @@ try
     GiroBebidas.Tests.CashSettingsChecks.Run(root, Check);
     GiroBebidas.Tests.ProductActionsChecks.Run(root, Check);
     GiroBebidas.Tests.EquipmentActionsChecks.Run(root, Check);
+    GiroBebidas.Tests.CustomerAccessChecks.Run(root, Check);
     Console.WriteLine($"\n{checks} verificações aprovadas. Dados de teste: {root}"); return 0;
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

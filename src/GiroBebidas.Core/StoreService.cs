@@ -195,6 +195,8 @@ public sealed partial class StoreService(JsonStore store)
             Currency(input.CreditLimit, "Limite de fiado");
             if (Balance(s, input.Id) > input.CreditLimit) throw new InvalidOperationException("O limite não pode ser menor que o saldo devedor atual.");
             var existing = s.Customers.FirstOrDefault(c => c.Id == input.Id);
+            // Blocking credit requires its own administrative action, even with a stale form.
+            input.CreditBlocked = existing?.CreditBlocked ?? false;
             if (existing is null) s.Customers.Add(input); else s.Customers[s.Customers.IndexOf(existing)] = input;
             Log(s, actor, $"Cliente salvo: {input.Name}"); return 0;
         });
@@ -259,6 +261,7 @@ public sealed partial class StoreService(JsonStore store)
             if (request.Method == PaymentMethod.Fiado)
             {
                 if (customer is null) throw new InvalidOperationException("Selecione um cliente para vender fiado.");
+                if (customer.CreditBlocked) throw new InvalidOperationException("O fiado deste cliente está bloqueado. Escolha outra forma de pagamento.");
                 if (Balance(s, customer.Id) + total > customer.CreditLimit) throw new InvalidOperationException("Esta venda ultrapassa o limite de fiado do cliente.");
             }
             Sale sale = new()
@@ -400,7 +403,7 @@ public sealed partial class StoreService(JsonStore store)
         => s.Sales.Where(v => !v.Canceled && (from is null || v.Date >= from) && (until is null || v.Date < until))
             .SelectMany(v => v.Lines).GroupBy(l => l.ProductId)
             .Select(g => new ProfitRow(g.Last().ProductName, g.Sum(l => l.Quantity), g.Sum(l => l.NetRevenue),
-                g.Sum(l => Money.Round(l.Quantity * l.UnitCost)), g.Sum(l => l.Profit))).OrderByDescending(r => r.Profit).ToList();
+                g.Sum(l => Money.Round(l.Quantity * l.UnitCost)), g.Sum(l => l.Profit)) { ProductId = g.Key }).OrderByDescending(r => r.Profit).ToList();
     internal static void ValidateCashOpeningDefault(decimal value) => Currency(value, "Fundo de troco sugerido");
     public void SaveSettings(StoreSettings settings)
     {

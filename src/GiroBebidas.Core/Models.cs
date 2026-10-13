@@ -91,6 +91,7 @@ public class Customer
     public string Address { get; set; } = "";
     public string Notes { get; set; } = "";
     public decimal CreditLimit { get; set; } = 500;
+    public bool CreditBlocked { get; set; }
 }
 
 public class SaleLine
@@ -232,6 +233,7 @@ public record CashSummary(decimal Opening, decimal CashSales, decimal Pix, decim
     decimal CreditSales, decimal Supplies, decimal Withdrawals, decimal Expected, decimal TotalSales, int SaleCount);
 public record ProfitRow(string Name, decimal Quantity, decimal Revenue, decimal Cost, decimal Profit)
 {
+    public Guid ProductId { get; init; }
     public decimal Margin => Revenue == 0 ? 0 : Profit / Revenue;
 }
 public static class Money { public static decimal Round(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero); }
