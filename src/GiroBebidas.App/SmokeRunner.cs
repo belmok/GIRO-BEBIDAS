@@ -104,6 +104,7 @@ public static partial class SmokeRunner
             CheckSettingsUi(output);
             CheckFiscalSettingsUi(output);
             CheckEquipmentUi(output);
+            CheckNavigationUi(output);
             CheckCashDetails(output);
             CheckStockUi(window, output);
             CheckUpdateConfirmation(window, output);

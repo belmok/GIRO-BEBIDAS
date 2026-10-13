@@ -1,4 +1,4 @@
-# Guia do Giro Bebidas — versão 1.9.0
+# Guia do Giro Bebidas — versão 1.10.0
 
 ## Instalação e primeiro acesso
 
@@ -7,6 +7,12 @@
 3. Entre com usuário **ADMIN** e senha **ADMIN**.
 4. Em **Configurações**, personalize os dados do depósito. A senha pode ser alterada em **Alterar minha senha**.
 5. Os produtos, estoques e códigos de barras iniciais são exemplos fictícios. Edite-os ou desative-os e cadastre os produtos do seu depósito.
+
+## Menu e navegação
+
+O menu lateral reúne **Vendas e operação**, **Fiscal**, **Gestão** e **Configurações**. Cada grupo mostra as telas disponíveis para o seu perfil; clique no nome da tela para abrir. A opção selecionada fica verde com uma faixa à esquerda.
+
+Use a rolagem do menu para alcançar as opções inferiores em janelas menores. O usuário conectado, **Sair do sistema** e **Alterar minha senha** ficam fixos na parte inferior do menu. A versão instalada aparece na barra inferior do programa, ao lado de **Salvamento automático**, e em **Atualizações**.
 
 ## Usuários e senhas
 

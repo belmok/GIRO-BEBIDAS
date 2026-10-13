@@ -20,7 +20,7 @@ public sealed partial class MainViewModel : Observable
         new("Outros", "M2,8 A1,1 0 1 0 2,10 A1,1 0 1 0 2,8 M9,8 A1,1 0 1 0 9,10 A1,1 0 1 0 9,8 M16,8 A1,1 0 1 0 16,10 A1,1 0 1 0 16,8")
     ];
     public string StoreName => Service.Snapshot.Settings.Name;
-    public string VersionLabel => $"Versão {typeof(StoreService).Assembly.GetName().Version!.ToString(3)} • Windows";
+    public string VersionLabel => $"Versão {typeof(StoreService).Assembly.GetName().Version!.ToString(3)}";
     public string OperatorName => Service.CurrentUser?.Name ?? "";
     public string OperatorInitial => OperatorName.Length > 0 ? OperatorName[..1].ToUpperInvariant() : "G";
     public string OperatorRole => Service.CurrentUser?.RoleLabel ?? "";
@@ -178,8 +178,13 @@ public sealed partial class MainViewModel : Observable
     public MainViewModel(StoreService service)
     {
         Service = service;
-        Navigation = [new("PDV", "Frente de caixa", "\uE719"), new("Pedidos", "Pedidos e entregas", "\uE8CB"), new("Clientes", "Clientes e fiados", "\uE716"), new("Caixa", "Caixa", "\uE8C7"), new("Vendas", "Vendas", "\uE9D9")];
-        if (service.IsAdmin) { Navigation.Insert(2, new("Estoque", "Produtos e estoque", "\uE7B8")); Navigation.AddRange([new("Relatórios", "Relatórios", "\uE9D2"), new("Usuários", "Usuários", "\uE77B"), new("Equipamentos", "Equipamentos", "\uE772"), new("Fiscal", "Cupom fiscal", "\uE8A5"), new("Atualizações", "Atualizações", "\uE895"), new("Configurações", "Configurações", "\uE713")]); }
+        const string operation = "VENDAS E OPERAÇÃO";
+        Navigation = [new("PDV", "Frente de caixa", "\uE719", operation), new("Vendas", "Vendas", "\uE9D9", operation), new("Pedidos", "Pedidos e entregas", "\uE8CB", operation), new("Clientes", "Clientes e fiados", "\uE716", operation), new("Caixa", "Caixa", "\uE8C7", operation)];
+        if (service.IsAdmin)
+        {
+            Navigation.Insert(3, new("Estoque", "Produtos e estoque", "\uE7B8", operation));
+            Navigation.AddRange([new("Fiscal", "Cupom fiscal e NFC-e", "\uE8A5", "FISCAL"), new("Relatórios", "Relatórios", "\uE9D2", "GESTÃO"), new("Configurações", "Configurações", "\uE713", "CONFIGURAÇÕES"), new("Usuários", "Usuários", "\uE77B", "CONFIGURAÇÕES"), new("Equipamentos", "Equipamentos", "\uE772", "CONFIGURAÇÕES"), new("Atualizações", "Atualizações", "\uE895", "CONFIGURAÇÕES")]);
+        }
         AddProductCommand = new RelayCommand(p => { if (p is ProductTile tile) { if (tile.Product.IsWeighed) RequestWeight?.Invoke(tile.Product); else AddProduct(tile.Product, 1); } }, _ => CanEditCart);
         IncrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed) RequestWeight?.Invoke(line.Product); else AddProduct(line.Product, 1); } }, _ => CanEditCart);
         DecrementCommand = new RelayCommand(p => { if (p is CartLine line) { if (line.Product.IsWeighed || line.Quantity <= 1) Cart.Remove(line); else line.Quantity--; CartChanged(); } }, _ => CanEditCart);

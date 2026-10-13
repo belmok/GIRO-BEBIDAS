@@ -1,5 +1,13 @@
 # Controle de versões
 
+## 1.10.0 — 12/10/2026
+
+Menu lateral organizado em Vendas e operação, Fiscal, Gestão e Configurações, com seleção verde e faixa lateral. Usuário e perfil permanecem fixos abaixo da navegação. O cartão promocional foi removido; a versão fica na barra inferior e no painel de atualizações.
+
+Rolagem do touchpad usa movimentos menores e acumula gestos consecutivos. A opção selecionada é revelada ao trocar de tela ou usar F2. Somente destinos permitidos aparecem para cada perfil, sem grupos vazios no operador. Instalador deixa de exibir as duas informações de primeiro acesso e do runtime, com altura ajustada.
+
+367 verificações de negócio e 47 de notas/publicação aprovadas. Navegação nativa nos 12 destinos administrativos e nos cinco operacionais, venda preservada, seleção, F2, textos, usuário fixo, versão e limites de rolagem conferidos em janelas normal e menor. Aplicativo empacotado, instalação e remoção conferidos em dados isolados antes da publicação.
+
 ## 1.9.0 — 12/10/2026
 
 Impressoras e balanças redesenhadas com cartões, tabelas, indicadores, estados vazios e menus de ações por linha. Definir padrão, testar, editar e remover usam o equipamento escolhido, preservando a configuração fiscal e os demais dados do depósito. Disponibilidade reflete filas e portas detectadas; leitura confirmada refere-se ao último teste realizado nesta sessão.

@@ -48,7 +48,7 @@ public sealed class CashDifferenceToneConverter : IValueConverter
     }
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
-public record NavItem(string Key, string Title, string Icon);
+public record NavItem(string Key, string Title, string Icon, string Group);
 public record CategoryChoice(string Name, string Icon);
 public class ProductTile
 {

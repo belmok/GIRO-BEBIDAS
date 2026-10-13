@@ -73,7 +73,7 @@ public sealed class InstallerWindow : Window
     {
         bool uninstall = InstallerApp.UninstallMode;
         Title = uninstall ? "Desinstalar Giro Bebidas" : "Instalar Giro Bebidas";
-        Width = 760; Height = 620; ResizeMode = ResizeMode.NoResize; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Width = 760; Height = uninstall ? 620 : 568; ResizeMode = ResizeMode.NoResize; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FontFamily = new FontFamily("Segoe UI"); FontSize = 14; Background = Brush("#F7F9F4"); Foreground = Brush("#18372A");
         var root = new Grid(); root.RowDefinitions.Add(new() { Height = new GridLength(127) }); root.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) }); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
         var banner = new Border { Background = Brush("#112D25"), Padding = new Thickness(32, 24, 32, 24) };
@@ -90,7 +90,7 @@ public sealed class InstallerWindow : Window
         browse.Click += (_, _) => { var pick = new OpenFolderDialog { Title = "Escolher pasta do Giro Bebidas", InitialDirectory = Directory.Exists(target.Text) ? target.Text : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) }; if (pick.ShowDialog(this) == true) target.Text = uninstall ? pick.FolderName : Path.Combine(pick.FolderName, "GiroBebidas"); };
         desktop = new CheckBox { Content = "Criar atalho na área de trabalho", IsChecked = true, Margin = new Thickness(0, 17, 0, 0), Visibility = uninstall ? Visibility.Collapsed : Visibility.Visible }; body.Children.Add(desktop);
         deleteData = new CheckBox { Content = "Excluir também todos os dados, fotos e backups locais", IsChecked = false, Margin = new Thickness(0, 17, 0, 0), Visibility = uninstall ? Visibility.Visible : Visibility.Collapsed }; body.Children.Add(deleteData);
-        body.Children.Add(new TextBlock { Text = uninstall ? "A desinstalação remove apenas os arquivos registrados pelo instalador." : "Primeiro acesso: usuário ADMIN • senha ADMIN\nAplicativo independente: não exige instalação prévia do .NET.", Foreground = Brush("#6F8965"), FontSize = 12, Margin = new Thickness(0, 20, 0, 0), TextWrapping = TextWrapping.Wrap });
+        if (uninstall) body.Children.Add(new TextBlock { Text = "A desinstalação remove apenas os arquivos registrados pelo instalador.", Foreground = Brush("#6F8965"), FontSize = 12, Margin = new Thickness(0, 20, 0, 0), TextWrapping = TextWrapping.Wrap });
         progress = new ProgressBar { Height = 7, Minimum = 0, Maximum = 100, Foreground = Brush("#247C4E"), Margin = new Thickness(0, 22, 0, 10), Visibility = Visibility.Hidden }; body.Children.Add(progress);
         status = new TextBlock { Text = $"Versão {InstallerApp.ProductVersion} • Windows 10 / 11 • 64 bits", Foreground = Brush("#7D9272"), FontSize = 12, TextWrapping = TextWrapping.Wrap }; body.Children.Add(status);
         var footer = new DockPanel { Margin = new Thickness(32, 13, 32, 27) }; Grid.SetRow(footer, 2); root.Children.Add(footer);
